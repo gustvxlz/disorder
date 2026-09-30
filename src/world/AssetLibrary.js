@@ -43,7 +43,7 @@ export class AssetLibrary {
     this.wallVariant = plaster.clone();
     this.wallVariant.map = this.textures['wall-b'];
     this.characters=new Map();
-    await Promise.all(['important/marta','important/supervisor','generic/office_01','generic/office_02'].map(async path=>{
+    await Promise.all(['important/protagonist','important/marta','important/supervisor','generic/office_01','generic/office_02'].map(async path=>{
       const model=await new GLTFLoader().loadAsync(`${base}models/characters/${path}.glb`);
       this.characters.set(path.split('/')[1],model);
     }));

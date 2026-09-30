@@ -1,10 +1,11 @@
-"""Art slice: remodel only the four active reference-derived employees.
+"""Reference-derived employees and protagonist. Pass -- --only protagonist for body work.
 Run with Blender --background --python. Originals are never opened for writing.
 Active characters share a 16-bone rig and ten named animation clips.
 """
 import bpy
 import math
 import json
+import sys
 from pathlib import Path
 from mathutils import Vector
 
@@ -184,8 +185,9 @@ def build(name, category, reference, outfit, hair, height):
         for x in [-.084,.084]:block('cardigan opening',(x,-.129,1.15),(.024,.012,.36),'white','spine')
     if outfit=='suit':
         for x in [-.155,.155]:block('jacket pocket',(x,-.125,1.04),(.09,.008,.013),'shoe','spine')
-    block('badge clip',(-.13,-.138,1.33),(.027,.012,.018),'metal','spine')
-    for z in [1.266,1.282]:block('badge writing',(-.115,-.138,z),(.024,.005,.004),'cloth','spine')
+    if name!='protagonist':
+        block('badge clip',(-.13,-.138,1.33),(.027,.012,.018),'metal','spine')
+        for z in [1.266,1.282]:block('badge writing',(-.115,-.138,z),(.024,.005,.004),'cloth','spine')
     if name in ['marta','office_01']:
         block('held clipboard',(.20,-.081,.96),(.28,.022,.29),'cloth','hand_R')
         block('held paper',(.20,-.095,.963),(.25,.006,.25),'white','hand_R')
@@ -286,7 +288,9 @@ def build(name, category, reference, outfit, hair, height):
     return {'id':name,'category':category,'reference':reference,'triangles':tris,'bones':len(rig.data.bones),'animations':CLIPS}
 
 previous=json.loads((OUT/'manifest.json').read_text()) if (OUT/'manifest.json').exists() else []
-active={'marta','supervisor','office_01','office_02'}
+active={'marta','supervisor','office_01','office_02','protagonist'}
+if '--only' in sys.argv:
+    active={sys.argv[sys.argv.index('--only')+1]}
 updated={variant[0]:build(*variant) for variant in VARIANTS if variant[0] in active}
 manifest=[updated.get(entry['id'],entry) for entry in previous] if previous else list(updated.values())
 (OUT/'manifest.json').write_text(json.dumps(manifest,indent=2),encoding='utf-8')

@@ -41,8 +41,8 @@
     "id": "protagonist",
     "category": "important",
     "reference": "main_character.png",
-    "triangles": 2756,
-    "bones": 15,
+    "triangles": 2628,
+    "bones": 16,
     "animations": [
       "idle",
       "walk",
