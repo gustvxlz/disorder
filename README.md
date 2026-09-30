@@ -29,11 +29,13 @@ During dialogue, E reveals the current line, then advances. Click the menu to en
 
 ## Slice validation
 
-Run `npm test` for automated checks. Every new shift begins normal. Read the internal notice, authorize printing through the phone, collect the order/card, compare box counts, and submit the inventory. The printer manifestation then introduces the second observation pass. Add `?dev=true` for metrics and seeded restarts: after that scene, **5** stays normal, **8** can change the clock, **1** can alter Marta's eyes. Eyes still require normal observation and distance; changes never start beside the player.
+Run `npm test` for automated checks. For a walking playtest, open the normal URL without `?dev=true` and choose NEW SHIFT. The only initial goal is to fetch September's monthly inventory from Archive B and deliver it to Marta. Access and document clues live in notices, conversations and the intranet; telephone, printer and box checks are not prerequisites.
+
+The first contact requires delivery, at least ten minutes of unpaused simulation, and a return near the Protocolo printer. The interval allows optional desktop exploration, conversations and environmental interactions. This minimum protects normality; it is not a claim of ten to fifteen minutes of mandatory or validated entertaining content. After contact, the existing seeded anomalies remain gated by time, leaving Protocolo, normal observation and distance. DEV is only a diagnostic tool and was not used for the recorded walking playtest.
 
 The scene renders at 640×480, with a centered 4:3 pixelated upscale and HTML UI. Four NPCs are active; nine reference-based character assets have been prepared. Original reference/music folders remain untouched.
 
-The current story slice keeps the art pass, adds the protagonist body, a printer/card puzzle, functional light circuits, the first telepathic manifestation and coherent pause/save. RESUME returns to the active paused scene; CONTINUE loads persistent progress. Old saves retain their previous progress and skip the new introduction: use NEW SHIFT to play the new mission. See `STORY_REPORT.md` for current verification and limitations. `ART_REPORT.md` and `PIVOT_REPORT.md` are historical checkpoints. The full campaign and a verified duration are not claimed.
+The gameplay rescue preserves the art, controls, body, light circuits and pause/save. Four employees now have contextual stations and short routines. Three CRTs open an original fictional corporate desktop, including an optional cat doodle and depot pastime. RESUME returns to the active paused scene; CONTINUE loads persistent progress. Old saves retain their previous progress: use NEW SHIFT for the new mission. See `GAMEPLAY_REPORT.md` for current verification and limitations. `STORY_REPORT.md`, `ART_REPORT.md` and `PIVOT_REPORT.md` are historical checkpoints. Only the first mission is implemented; the seven-task fixed-building plan is not a playable campaign.
 
 ## Preview
 
