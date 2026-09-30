@@ -1,5 +1,4 @@
-const required = ['A-14', 'A-15', 'A-16'];
-import { archiveRecords, printerExtension } from './MissionData.js';
+import { archiveFolders, inventoryFolder } from './MissionData.js';
 
 export class TaskManager {
   constructor(world) { this.world = world; }
@@ -8,35 +7,27 @@ export class TaskManager {
     if (this.world.currentTask === 'pending') this.world.currentTask = 'inspection';
   }
 
-  authorizePrinter(extension) {
-    if(String(extension).trim()!==printerExtension)return false;
-    this.world.story.printerAuthorized=true;return true;
-  }
-  printOrder() {
-    if(!this.world.story.printerAuthorized)return false;
-    this.world.story.orderPrinted=true;return true;
-  }
   takeCard() {
-    if(!this.world.story.orderPrinted)return false;
     if(!this.world.inventory.includes('archive-card'))this.world.inventory.push('archive-card');
+    return true;
+  }
+  takeFolder(code) {
+    if(!this.world.story.archiveUnlocked || this.world.story.routineSubmitted || !archiveFolders.some(folder=>folder.code===code))return false;
+    // One document slot: choosing another folder returns the previous one to the shelf.
+    this.world.story.folderCode=code;
+    if(!this.world.inventory.includes('archive-folder'))this.world.inventory.push('archive-folder');
     return true;
   }
   submitRoutine() {
     const s=this.world.story;
     if(!this.canSubmitRoutine)return false;
-    s.routineSubmitted=true;s.phase='manifestation';return true;
-  }
-  get canSubmitRoutine() { return this.world.currentTask==='inspection' && this.inspected===3 && this.world.story.orderPrinted && !this.world.story.routineSubmitted; }
-  inspect(code, count) {
-    if (this.world.currentTask !== 'inspection' || !required.includes(code)) return false;
-    if(!this.world.story.orderPrinted || !this.world.story.archiveUnlocked || Number(count)!==archiveRecords[code])return false;
-    this.world.story.boxCounts[code]=Number(count);
-    if (!this.world.flags.inspectedBoxes.includes(code)) this.world.flags.inspectedBoxes.push(code);
+    s.routineSubmitted=true;s.folderCode=null;
+    this.world.inventory=this.world.inventory.filter(item=>item!=='archive-folder');
+    if(!this.world.completedTasks.includes('monthly_inventory'))this.world.completedTasks.push('monthly_inventory');
     return true;
   }
-
-  get inspected() { return this.world.flags.inspectedBoxes.length; }
-  get canReport() { return this.world.currentTask === 'inspection' && this.inspected === required.length && this.world.story.entityHeard && this.world.story.anomaliesReleased; }
+  get canSubmitRoutine() { return this.world.currentTask==='inspection' && this.world.inventory.includes('archive-folder') && this.world.story.folderCode===inventoryFolder && !this.world.story.routineSubmitted; }
+  get canReport() { return this.world.currentTask === 'inspection' && this.world.story.routineSubmitted && this.world.story.entityHeard && this.world.story.anomaliesReleased; }
 
   report(type, location = null) {
     if (!this.canReport || !['conforme', 'irregularity'].includes(type)) return false;

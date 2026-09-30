@@ -7,7 +7,7 @@ export function createWorldState(seed) {
   return {
     seed: normalized,
     shiftId: `D-${String(random.int(0, 9999)).padStart(4, '0')}-${String(random.int(0, 9999)).padStart(4, '0')}`,
-    gameTime: 107,
+    gameTime: 23 * 60 + 20,
     currentTask: 'pending',
     completedTasks: [],
     anomalyStates: {},

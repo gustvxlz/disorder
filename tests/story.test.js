@@ -11,20 +11,21 @@ import { Game } from '../src/core/Game.js';
 import { PlayerBody } from '../src/player/PlayerBody.js';
 import { completeInventory } from './helpers/mission.js';
 
-test('routine puzzle gates printing, card, counts and one-time manifestation',()=>{
+test('folder puzzle needs access and correct month/type, never printer or box checks',()=>{
   const world=createWorldState(8),task=new TaskManager(world);task.openOrder();
-  assert.equal(task.printOrder(),false);assert.equal(task.takeCard(),false);
-  assert.equal(task.authorizePrinter('123'),false);assert.equal(task.inspect('A-14',12),false);
-  assert.equal(task.authorizePrinter('417'),true);assert.equal(task.printOrder(),true);
+  assert.equal(task.takeFolder('B-02'),false);assert.equal(task.takeCard(),true);
   assert.equal(task.takeCard(),true);task.takeCard();assert.deepEqual(world.inventory,['archive-card']);
-  assert.equal(task.inspect('A-14',12),false,'must unlock access');world.story.archiveUnlocked=true;
-  assert.equal(task.inspect('A-14',8),false,'wrong count cannot rubricate');
-  completeInventory(world,task);assert.equal(task.canSubmitRoutine,true);
+  assert.equal(task.takeFolder('B-02'),false,'must unlock access');world.story.archiveUnlocked=true;
+  assert.equal(task.takeFolder('B-01'),true);assert.equal(task.canSubmitRoutine,false,'August is not September');
+  assert.equal(task.takeFolder('B-03'),true);assert.equal(task.canSubmitRoutine,false,'September maintenance is not inventory');
+  assert.equal(task.takeFolder('B-02'),true);assert.equal(task.canSubmitRoutine,true);
+  world.story.orderPrinted=false;world.flags.inspectedBoxes=[];
   assert.equal(task.submitRoutine(),true);assert.equal(task.submitRoutine(),false);
-  assert.equal(world.story.phase,'manifestation');assert.equal(task.canReport,false);
+  assert.equal(world.story.phase,'routine','delivery is still completely normal');assert.equal(task.canReport,false);
+  assert.deepEqual(world.inventory,['archive-card']);assert.deepEqual(world.completedTasks,['monthly_inventory']);
 });
 
-test('v2 story, lighting, access, pose survive and v1 progress migrates',()=>{
+test('v3 story, lighting, access, pose survive and v1 progress migrates',()=>{
   const store=new Map();globalThis.localStorage={getItem:k=>store.get(k),setItem:(k,v)=>store.set(k,v)};
   const world=createWorldState(1),task=new TaskManager(world);completeInventory(world,task);task.submitRoutine();
   world.story.lighting.archive=false;world.story.doors.archive='OPEN';world.playerPose=[-8,-14,.3,-.2];

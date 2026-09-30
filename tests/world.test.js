@@ -57,9 +57,10 @@ test('actual office kit supports the complete walking route and interaction targ
     assert.match(interaction.update(), expected);
   };
   walk(-.91, 6.2); aim(-.91, .88, 7.46, /Atender/);
-  walk(-1.65, 6.2); aim(-1.65, 1.06, 7.72, /terminal/);
-  walk(-1.65,5.8);walk(3.6,5.8);walk(3.6,7.7);aim(4.87,1.7,7.7,/aviso/);
-  walk(3.6,9.25);walk(2.65,9.25);aim(2.65,.7,10.35,/cartão/);
+  walk(-1.65, 6.2); aim(-1.65, 1.06, 7.72, /computador/);
+  walk(-1.65,5.8);walk(3.6,5.8);aim(4.84,1.49,5.9,/Quadro de chaves/);
+  walk(3.6,7.7);aim(4.87,1.7,7.7,/aviso/);
+  walk(3.6,9.25);walk(2.65,9.25);aim(2.65,.7,10.35,/Gaveteiro/);
   walk(3.6,9.25);walk(3.6,5.8);walk(-2.9,5.8);walk(-2.9,8.5);aim(-3.6,1,8.5,/Impressora/);
   walk(-2.9,5.8);walk(0,4.2);
   walk(.9,4.2);aim(.9,1.18,3.09,/Interruptor/);walk(0,4.2);
@@ -70,8 +71,8 @@ test('actual office kit supports the complete walking route and interaction targ
   player.clearInput(); walk(0, 4.2);
   world.doors[0].interact();
   for (let i = 0; i < 80; i++) world.doors[0].update(1 / 60);
-  walk(0, 1); walk(0, -11); walk(1, -12.4);
-  aim(2.6, 1.3, -12.4, /Marta/);
+  walk(0, 1); walk(0, -11); walk(2.15, -12.85);
+  aim(3.25, 1.3, -14.55, /Marta/);
   walk(-3.7, -12.5);
   world.doors[1].interact();
   assert.equal(world.doors[1].state,'LOCKED','no card cannot enter archive');
@@ -80,20 +81,38 @@ test('actual office kit supports the complete walking route and interaction targ
   assert.equal(game.world.story.archiveUnlocked,true);
   for (let i = 0; i < 80; i++) world.doors[1].update(1 / 60);
   walk(-6.2, -12.5); walk(-8.9, -14.5); walk(-8.9, -15.5);
-  for (const [x, code] of [[-9.37, 'A-14'], [-8.9, 'A-15'], [-8.43, 'A-16']]) {
-    walk(x, -15.5); aim(x, 1.36, -16.8, new RegExp(code));
+  for (const [x, code] of [[-9.37, 'B-01'], [-8.9, 'B-02'], [-8.43, 'B-03']]) {
+    walk(x, -15.5); aim(x, 1.32, -16.8, new RegExp(code));
   }
   walk(-6.4,-15.1);aim(-5.18,2.1,-15.1,/relógio/);walk(-8.9,-15.5);
   walk(-8.9, -14.5); walk(-6.2, -12.5); walk(-3.7, -12.5);
   walk(0, -11); walk(0, 1); walk(0, 4.2); walk(-1.65, 6.2);
-  aim(-1.65, 1.06, 7.72, /terminal/);
+  aim(-1.65, 1.06, 7.72, /computador/);
   assert.equal(player.collides(-1.4, 7.7), true, 'desk blocks player');
-  assert.equal(player.collides(2.6, -12.4), true, 'Marta blocks player');
+  assert.equal(player.collides(3.25, -14.55), true, 'Marta/chair station blocks player');
   game.world.story.lighting.protocol=false;world.applyLighting();
   assert.ok(world.lights.protocol.every(light=>light.intensity===0));
   assert.ok(world.emitters.protocol.length>0);
   world.setInterference(.08);assert.ok(world.lights.protocol.every(light=>light.intensity>0),'entity can override a switched-off circuit');
   world.setInterference(1);assert.ok(world.lights.protocol.every(light=>light.intensity===0),'manual state restored after interference');
+  game.world.story.folderCode='B-02';world.refreshFolders();
+  assert.equal(world.folderMeshes.get('B-02').visible,false);
+  game.world.story.folderCode=null;game.world.story.routineSubmitted=true;world.refreshFolders();
+  assert.equal(world.folderMeshes.get('B-02').visible,false);
+  assert.equal(world.folderMeshes.get('B-01').visible,true,'unrelated folders stay on the shelf after delivery');
+  assert.equal(world.folderMeshes.get('B-03').visible,true);
+  game.world.flags.openingComplete=true;game.flow={observed:null};player.position.set(4.4,0,5);
+  const visited=new Map(world.npcs.map(npc=>[npc.id,new Set()]));
+  for(let i=0;i<18000;i++){
+    world.update(1/60);
+    for(const npc of world.npcs)visited.get(npc.id).add(npc.routine.step);
+  }
+  for(const npc of world.npcs)assert.equal(visited.get(npc.id).size,npc.routine.steps.length,`${npc.name} completes every station/waypoint with real colliders`);
+  assert.equal(world.screens.materials.size,3,'screen routines reuse shared materials');
+  const renato=world.npcs.find(npc=>npc.id==='office_02');
+  const before=renato.root.position.clone();game.flow.observed=renato;
+  world.update(1);assert.deepEqual(renato.root.position,before,'speaking NPC stays in place');
+  game.flow.observed=null;
   let meshes = 0, triangles = 0;
   scene.traverse(object => {
     if (!object.isMesh) return;

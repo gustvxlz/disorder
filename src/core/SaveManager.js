@@ -5,14 +5,14 @@ export class SaveManager {
   load() {
     try {
       const data = JSON.parse(localStorage.getItem(KEY));
-      if (![1,2].includes(data?.version) || !Number.isInteger(data.world?.seed)) return null;
+      if (![1,2,3].includes(data?.version) || !Number.isInteger(data.world?.seed)) return null;
       const world = data.world;
       if (!['pending', 'inspection', 'complete'].includes(world.currentTask)) return null;
       const base = createWorldState(world.seed);
       const restored = { ...base, ...world, flags: { ...base.flags, ...world.flags } };
       restored.story = { ...base.story, ...world.story,
         lighting: { ...base.story.lighting, ...world.story?.lighting },
-        doors: { ...world.story?.doors }, boxCounts: { ...world.story?.boxCounts } };
+        doors: { ...world.story?.doors }, boxCounts: { ...world.story?.boxCounts }, routines: { ...world.story?.routines } };
       if(data.version===1 && !world.story) {
         // An old in-progress run keeps its earned access and anomaly/report state.
         Object.assign(restored.story,{phase:'aftermath',printerAuthorized:true,orderPrinted:true,
@@ -20,6 +20,13 @@ export class SaveManager {
         if(!restored.inventory.includes('archive-card'))restored.inventory=[...restored.inventory,'archive-card'];
       }
       if(!['routine','manifestation','aftermath'].includes(restored.story.phase))return null;
+      if(data.version<3 && restored.story.phase!=='routine')restored.story.normalSeconds=600;
+      if(!Number.isFinite(restored.story.normalSeconds)||restored.story.normalSeconds<0||restored.story.normalSeconds>7200)return null;
+      if(![null,'B-01','B-02','B-03'].includes(restored.story.folderCode))return null;
+      for(const state of Object.values(restored.story.routines)) {
+        if(!state||!Number.isInteger(state.step)||state.step<0||state.step>20||!Number.isFinite(state.elapsed)||state.elapsed<0||state.elapsed>300)return null;
+        if(!Array.isArray(state.position)||state.position.length!==2||state.position.some(n=>!Number.isFinite(n)||Math.abs(n)>25))return null;
+      }
       for(const key of ['memoRead','printerAuthorized','orderPrinted','archiveUnlocked','routineSubmitted','entityHeard','anomaliesReleased']) {
         if(typeof restored.story[key]!=='boolean')return null;
       }
@@ -42,7 +49,7 @@ export class SaveManager {
   }
 
   save(world) {
-    try { localStorage.setItem(KEY, JSON.stringify({ version: 2, world })); return true; }
+    try { localStorage.setItem(KEY, JSON.stringify({ version: 3, world })); return true; }
     catch { return false; }
   }
 }

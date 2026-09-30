@@ -27,6 +27,7 @@ test('purple eyes cannot precede normal observation or appear beside the player'
   world.flags.martaSeenNormal=true;
   assert.equal(anomalies.revealEyes(20),false,'cannot reveal before entity');
   world.story.entityHeard=true;world.story.anomaliesReleased=true;
+  world.story.routineSubmitted=true;world.story.releaseDelay=30;
   assert.equal(anomalies.revealEyes(2),false);
   assert.equal(anomalies.revealEyes(20),true);
   assert.equal(anomalies.revealEyes(20),false);

@@ -1,4 +1,5 @@
 import { MissionUI } from './MissionUI.js';
+import { ComputerUI } from './ComputerUI.js';
 export class GameUI {
   constructor(root, game) {
     this.root = root;
@@ -17,6 +18,7 @@ export class GameUI {
     this.panel = root.querySelector('.panel');
     this.panelInner = root.querySelector('.panel-inner');
     this.mission = new MissionUI(this);
+    this.computer = new ComputerUI(this);
     this.dev = root.querySelector('.dev');
     this.dev.querySelector('[data-position]').insertAdjacentHTML('beforeend', '<option value="phone">PHONE</option>');
     for(const [value,label] of [['art-protocol','ART PROTOCOL'],['art-corridor','ART CORRIDOR'],['art-archive','ART ARCHIVE'],['art-npc','ART NPC'],['art-prop','ART PROP']]) {
@@ -35,7 +37,7 @@ export class GameUI {
 
   setLoading(loading, message = 'CARREGANDO ARQUIVOS…') {
     this.menu.querySelector('[data-action="new"]').disabled = loading;
-    this.menu.querySelector('.version').textContent = loading ? message : 'v0.1 · PROTOCOLO 01:47';
+    this.menu.querySelector('.version').textContent = loading ? message : 'v0.2 · TURNO 23:20';
     this.updateContinue();
   }
   updateContinue() { this.menu.querySelector('[data-action="continue"]').disabled = !this.game.ready || !this.game.save.load(); }
@@ -72,7 +74,7 @@ export class GameUI {
     this.panelMode = 'settings';
     const settings = this.game.settings.value;
     const volumes=[['volume','MASTER'],['music','MUSIC'],['sfx','SFX']].map(([key,label])=>`<label>${label}<input data-setting="${key}" type="range" min="0" max="1" step="0.01" value="${settings[key]}"></label>`).join('');
-    this.panelInner.innerHTML = `<p class="eyebrow">DISORDER / CONFIGURAÇÕES</p><h2>SETTINGS</h2><label>MOUSE SENSITIVITY <input data-setting="sensitivity" type="range" min="0.0007" max="0.005" step="0.0001" value="${settings.sensitivity}"></label>${volumes}<p class="muted">IMAGEM: 640 × 480 · 4:3 · PIXEL PERFECT</p><label><input data-setting="headBob" type="checkbox" ${settings.headBob ? 'checked' : ''}> HEAD BOB</label><button class="secondary" data-action="close-settings">VOLTAR</button>`;
+    this.panelInner.innerHTML = `<p class="eyebrow">DISORDER / CONFIGURAÇÕES</p><h2>SETTINGS</h2><label>MOUSE SENSITIVITY <input data-setting="sensitivity" type="range" min="0.0007" max="0.005" step="0.0001" value="${settings.sensitivity}"></label>${volumes}<p class="muted">IMAGEM: 640 × 480 · 4:3 · PIXEL PERFECT</p><p>${this.game.performance.summary()}</p><label><input data-setting="headBob" type="checkbox" ${settings.headBob ? 'checked' : ''}> HEAD BOB</label><button class="secondary" data-action="close-settings">VOLTAR</button>`;
     this.panel.classList.remove('hidden');
   }
 
@@ -95,6 +97,7 @@ export class GameUI {
   handleClick(event) {
     const action = event.target.closest('button')?.dataset.action;
     if (!action) return;
+    if(this.computer.handle(action,event.target.closest('button')))return;
     if(this.mission.handle(action,event.target.closest('button')))return;
     if (action === 'new') this.game.startNew();
     else if (action === 'resume') this.game.resume();
@@ -111,14 +114,13 @@ export class GameUI {
     else if (action === 'restart') this.game.startNew(this.dev.querySelector('[data-seed]').value);
     else if (action === 'force-on' || action === 'force-off') this.game.forceAnomaly(action === 'force-on');
     else if (action === 'go') this.game.devTeleport(this.dev.querySelector('[data-position]').value);
-    else if (action === 'confirm-box') this.game.confirmBox(event.target.closest('button').dataset.code);
     else if(action==='force-eyes'&&this.game.world){this.game.world.flags.purpleEyesEligible=true;this.game.persist();}
-    else if(action==='skip-task'&&this.game.world){this.game.ui.toast('A conferência exige folha, cartão e volumes.');}
+    else if(action==='skip-task'&&this.game.world){this.game.ui.toast('Entregue o inventário mensal à Marta.');}
     else if(action==='advance-time'&&this.game.world){this.game.world.gameTime+=15;this.game.worldManager.refreshClocks();this.game.persist();}
   }
   credits() {
     this.panelMode='settings';
-    this.panelInner.innerHTML='<p class="eyebrow">DISORDER / CRÉDITOS</p><h2>UM TURNO NOTURNO</h2><div class="document"><p>Referências de personagens e músicas: fornecidas pelo autor.</p><p>Modelos: adaptações originais produzidas no Blender.</p><p>Trilha digital e efeitos: composições e síntese procedural originais.</p><p>Texturas: originais procedurais.</p><p>Three.js · Vite</p></div><button data-action="close-settings">VOLTAR</button>';
+    this.panelInner.innerHTML='<p class="eyebrow">DISORDER / CRÉDITOS</p><h2>UM TURNO NOTURNO</h2><div class="document"><p>Referências de personagens e músicas: fornecidas pelo autor.</p><p>Modelos: adaptações originais produzidas no Blender.</p><p>Trilha digital e efeitos: composições e síntese procedural originais.</p><p>Texturas: originais procedurais.</p><p>SISCOR, Gato de Plantão e Varredura do Depósito: interfaces, desenho e código originais. Sem GIF ou áudio de terceiros.</p><p>Three.js · Vite</p></div><button data-action="close-settings">VOLTAR</button>';
     this.panel.classList.remove('hidden');
   }
 }

@@ -164,6 +164,16 @@ export class Game {
     this.persist();
     this.ui.terminal();
   }
+  openComputer(station) {
+    if(this.flow.busy)return;
+    this.player.enabled=false;this.player.clearInput();document.exitPointerLock?.();
+    this.audio.interact();this.ui.computer.open(station,station==='desk'?'personal':station==='marta'?'inventory':'intranet');
+  }
+  inspectFolder(code) {
+    if(this.flow.busy)return;
+    this.player.enabled=false;this.player.clearInput();document.exitPointerLock?.();
+    this.audio.paper();this.ui.mission.folder(code);
+  }
 
   closePanel() {
     this.ui.panel.classList.add('hidden');
@@ -187,21 +197,12 @@ export class Game {
   }
 
   inspectBox(code) {
-    if (this.world.currentTask !== 'inspection') { this.ui.toast(this.world.currentTask === 'complete' ? 'CONFERÊNCIA ENCERRADA' : 'CONSULTE A PENDÊNCIA NO PROTOCOLO'); return; }
+    if(this.flow.busy)return;
     this.player.enabled = false;
     this.player.clearInput();
     document.exitPointerLock?.();
     this.audio.paper();
     this.ui.boxInspection(code);
-  }
-
-  confirmBox(code,count) {
-    if (this.task.inspect(code,count)) {
-      this.audio.paper();
-      this.ui.toast(`${code} · CONFERIDO (${this.task.inspected}/3)`);
-      this.persist();
-      this.closePanel();
-    } else this.ui.toast('A folha não corresponde. Confira volumes, autorização e acesso.');
   }
 
   openMissionPanel(type) {
@@ -215,9 +216,7 @@ export class Game {
   }
   submitRoutine() {
     if(!this.task.submitRoutine())return;
-    this.world.inventory=this.world.inventory.filter(item=>item!=='archive-card');
-    this.world.completedTasks.push('archive_inventory');this.persist();
-    this.closePanel();
+    this.audio.paper();this.worldManager.refreshFolders();this.persist();
   }
 
   report(type, location = null) {

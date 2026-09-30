@@ -6,6 +6,8 @@ import { Labels } from './Labels.js';
 import { batchStatic } from './AssetLibrary.js';
 import { furnishProtocol, furnishCorridor, furnishArchive } from './OfficeRooms.js';
 import { OfficeNPC } from '../npc/OfficeNPC.js';
+import { ScreenArt } from './ScreenArt.js';
+import { inventoryFolder } from '../narrative/MissionData.js';
 
 export class WorldManager {
   constructor(scene,player,interaction,game,time,anomalies,audio,assets) {
@@ -13,6 +15,7 @@ export class WorldManager {
     this.colliders=player.colliders;this.doors=[];this.clocks=[];this.lights={protocol:[],corridor:[],archive:[]};this.emitters={protocol:[],corridor:[],archive:[]};this.interference=1;
     this.staticRoot=new THREE.Group();scene.add(this.staticRoot);
     this.labels=new Labels();this.phonePosition=new THREE.Vector3();
+    this.screens=new ScreenArt();this.computerScreens=new Map();
     this.detailMaterial=new THREE.MeshStandardMaterial({color:0xa6a18a,roughness:.8});
     this.build();
   }
@@ -46,7 +49,7 @@ export class WorldManager {
     const s=this.game.world.story;
     const door=new Door({scene:this.scene,assets:this.assets,x,z,rotation,locked:locked&&!(id==='archive'&&s.archiveUnlocked),player:this.player,audio:this.audio,interaction:this.interaction,
       access:id==='archive'?()=>{
-        if(!this.game.world.inventory.includes('archive-card')){this.game.ui?.toast('Cartão B no gaveteiro do Protocolo.');return false;}
+        if(!this.game.world.inventory.includes('archive-card')){this.game.ui?.toast('Leitor: ACESSO B · cartão compartilhado.');return false;}
         s.archiveUnlocked=true;return true;
       }:null,onChange:state=>{if(id){s.doors[id]=state;this.game.persist?.();}}});
     if(id&&s.doors[id]==='OPEN'){door.state='OPEN';door.progress=1;door.apply(1);}
@@ -73,6 +76,7 @@ export class WorldManager {
   }
   toggleLight(sector){const s=this.game.world.story;s.lighting[sector]=!s.lighting[sector];this.audio.interact();this.applyLighting();this.game.persist();this.game.ui.toast(s.lighting[sector]?'LUZ LIGADA':'LUZ DESLIGADA');}
   setInterference(value){this.interference=value;this.applyLighting();}
+  refreshFolders(){const s=this.game.world.story;for(const [code,model] of this.folderMeshes)model.visible=s.folderCode!==code&&!(s.routineSubmitted&&code===inventoryFolder);}
   build() {
     this.scene.background=new THREE.Color(0x18211d);
     this.scene.fog=new THREE.Fog(0x28322c,17,44);
@@ -97,7 +101,7 @@ export class WorldManager {
     r.wall(-5,-16.5,3,-Math.PI/2);
     for(const z of [0,-4])this.door(-1.39,z+.49,Math.PI/2,true);
     this.label('SALA 02\nACESSO RESTRITO',-1.38,2.3,0,.8,.26,Math.PI/2);
-    this.label('ADMINISTRAÇÃO',-1.38,2.3,-4,.9,.24,Math.PI/2);
+    this.label('RH / CONTABILIDADE\nFECHADO APÓS 18H',-1.38,2.3,-4,.9,.32,Math.PI/2);
     this.light(-1,7.8,16,0xe6e4ca);
     this.light(2,9.1,7,0xe4dbbe);
     this.light(0,1,9);
@@ -112,11 +116,11 @@ export class WorldManager {
     this.clocks.push(new AnalogClock(this.scene,this.assets,0,2.06,10.88,Math.PI,()=>0));
     this.clocks.push(new AnalogClock(this.scene,this.assets,-5.18,2.1,-15.1,-Math.PI/2,()=>this.anomalies.clockOffset));
     for(const clock of this.clocks)this.interaction.register(clock.root,{canInteract:()=>!this.game.flow?.busy,getInteractionText:()=>'[E] Ler relógio',interact:()=>this.game.inspectClock(clock)});
-    this.marta=new OfficeNPC(this,{id:'marta',model:'marta',name:'Marta',x:2.6,z:-12.4,rotation:-Math.PI/2,role:'important',idle:'inspect_document'});
-    this.supervisor=new OfficeNPC(this,{id:'supervisor',model:'supervisor',name:'Colega',x:-.15,z:6.6,rotation:-Math.PI/2,role:'important'});
+    this.marta=new OfficeNPC(this,{id:'marta',model:'marta',name:'Marta',x:3.25,z:-14.55,rotation:0,role:'important',idle:'typing'});
+    this.supervisor=new OfficeNPC(this,{id:'supervisor',model:'supervisor',name:'Antônio',x:-2.9,z:9.45,rotation:-2.5,role:'important',idle:'inspect_document'});
     this.npcs=[this.marta,this.supervisor,
-      new OfficeNPC(this,{id:'office_01',model:'office_01',x:-3.5,z:-14.1,rotation:.4,idle:'carry_folder'}),
-      new OfficeNPC(this,{id:'office_02',model:'office_02',x:3.9,z:-11.3,rotation:-Math.PI*.6,idle:'look'}),
+      new OfficeNPC(this,{id:'office_01',model:'office_01',name:'Lúcia',x:1.4,z:10.45,rotation:Math.PI,idle:'typing'}),
+      new OfficeNPC(this,{id:'office_02',model:'office_02',name:'Renato',x:-2.8,z:-13.1,rotation:Math.PI,idle:'inspect_document'}),
     ];
     for(const npc of this.npcs)this.contactShadow(0,0,.62,.46,0,npc.root);
     this.applyLighting();
@@ -127,7 +131,7 @@ export class WorldManager {
   refreshClocks() {for(const clock of this.clocks)clock.update(this.game.world.gameTime);}
   update(dt) {for(const door of this.doors)door.update(dt);for(const npc of this.npcs)npc.update(dt,this.player);}
   dispose() {
-    this.labels.dispose();this.detailMaterial.dispose();
+    this.labels.dispose();this.screens.dispose();this.detailMaterial.dispose();
     for(const npc of this.npcs)npc.dispose();
     for(const materials of Object.values(this.emitters))for(const material of materials)material.dispose();
     this.scene.traverse(object=>{if(object.userData.ownedGeometry)object.geometry.dispose();});

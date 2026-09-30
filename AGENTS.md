@@ -20,6 +20,14 @@ Deploy: GitHub Pages.
 - Não fazer alterações fora do escopo solicitado.
 - Corrigir erros antes de prosseguir.
 
+# Missões
+
+Se uma missão puder ser descrita principalmente como uma sequência de
+'vá até X e pressione E', ela deve ser redesenhada.
+
+Preferir um objetivo claro, descoberta no ambiente e decisões contextualizadas.
+Não alongar missões empilhando códigos, botões ou microchecklists.
+
 # Arquivos
 
 Evitar arquivos JavaScript enormes. Quando um sistema crescer significativamente, separar responsabilidades.

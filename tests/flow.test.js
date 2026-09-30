@@ -13,8 +13,8 @@ function fixture(seed){
   const makeNpc=(id,name)=>({id,name,idle:'idle',root:{position:new THREE.Vector3(2.6,0,-12.4)},play(){},moveTo(){},setPosition(x,z){this.root.position.set(x,0,z);}});
   const g={world,camera:new THREE.PerspectiveCamera(68,4/3),player:{position:new THREE.Vector3(),clearInput(){},lock(){},enabled:false},
     task:new TaskManager(world),anomalies:new AnomalyManager(world,true),ui:{toast(){}},persist(){},music:{silence(){},direction(){}},
-    audio:{printer(){},interference(){}},
-    worldManager:{supervisor:makeNpc('supervisor','Colega'),marta:makeNpc('marta','Marta'),setInterference(){},refreshClocks(){},printer:{position:new THREE.Vector3()},entityPaper:{visible:false,position:new THREE.Vector3()}}};
+    audio:{printer(){},interference(){},phone(){},stopRing(){}},
+    worldManager:{supervisor:makeNpc('supervisor','Colega'),marta:makeNpc('marta','Marta'),setInterference(){},refreshClocks(){},refreshFolders(){},printer:{position:new THREE.Vector3(-3.6,.79,8.5)},entityPaper:{visible:false,position:new THREE.Vector3()}}};
   g.ui.panel={classList:{add(){}}};
   g.dialogue=new DialogueManager({classList:{add(){},remove(){}}},{dialogueTone(){}});
   g.flow=new ShiftFlow(g);return g;
@@ -27,7 +27,7 @@ test('opening gates movement, starts task and Continue skips completed opening',
   assert.equal(g.world.flags.openingComplete,true);assert.equal(g.world.currentTask,'inspection');assert.equal(g.player.enabled,true);
   g.flow=new ShiftFlow(g);g.flow.start();
   assert.equal(g.flow.busy,false);assert.equal(g.dialogue.active,false);
-  assert.equal(g.worldManager.supervisor.root.position.x,2.8);
+  assert.equal(g.worldManager.supervisor.root.position.x,2.6,'Continue does not teleport the colleague to a random idle point');
 });
 
 test('normal, clock-only and eyes-only seeds follow the intended observation gate',()=>{
@@ -41,7 +41,9 @@ test('normal, clock-only and eyes-only seeds follow the intended observation gat
     completeInventory(g.world,g.task);
     assert.equal(g.task.report('conforme'),false,'routine cannot jump to anomaly reporting');
     assert.equal(g.task.submitRoutine(),true);
-    g.flow.beginManifestation();g.flow.update(4.1);
+    g.player.position.set(-2.25,0,8.6);g.flow.update(599);
+    assert.equal(g.flow.manifestation,undefined,'no contact before ten normal simulation minutes');
+    g.flow.update(1);assert.ok(g.flow.manifestation);g.flow.update(4.1);
     assert.equal(g.worldManager.entityPaper.visible,true);
     assert.equal(g.player.enabled,false);
     for(let i=0;i<8;i++)g.dialogue.advance();
@@ -50,6 +52,8 @@ test('normal, clock-only and eyes-only seeds follow the intended observation gat
     g.player.position.set(-9,0,-16);g.flow.update(.016);
     assert.equal(g.world.story.anomaliesReleased,false);
     g.flow.update(8);
+    assert.equal(g.world.anomalyStates.purple_eyes,false,'NPC escalation is delayed after the first small anomaly');
+    g.flow.update(22);
     assert.equal(g.world.flags.visitedArchive,true);
     assert.equal(g.world.anomalyStates.purple_eyes,eyes);
     assert.equal(g.world.anomalyStates.clock_offset,clock);

@@ -18,10 +18,9 @@ export class Manifestation {
     if(this.printed)g.worldManager.entityPaper.position.x=-3.55+Math.min(1,this.elapsed-2)*.25;
     if(this.elapsed>=4 && !this.startedVoice) {
       this.startedVoice=true;
-      g.dialogue.start(['Você também ouviu a folha antes de ela sair?',
-        'Duas realidades tocaram o mesmo lugar. Algumas coisas ficaram do lado errado.',
-        'Não confie em mim. Compare com o que você já viu. O relógio. Os olhos. Os nomes.',
-        'Termine o turno. Mas observe antes de registrar.'],{
+      g.audio.phone(g.worldManager.phonePosition);
+      g.dialogue.start(['Você consegue me ouvir?', 'Ótimo. Alguma coisa mudou.',
+        'Não confie em tudo que reconhece.'],{
         name:'SEM RAMAL',profile:'entity',speed:25,
         onComplete:()=>this.finish(),
       });
@@ -30,9 +29,10 @@ export class Manifestation {
   finish() {
     const g=this.game,s=g.world.story;
     s.entityHeard=true;s.phase='aftermath';s.releaseDelay=0;
+    g.audio.stopRing();
     g.worldManager.setInterference(1);g.player.yaw=g.camera.rotation.y;g.player.pitch=g.camera.rotation.x;
     g.flow.manifestation=null;g.flow.busy=false;g.player.enabled=true;g.player.lock();
-    g.ui.toast('Nova anotação na ficha. Leia a impressão e revisite o Arquivo B.');g.persist();
+    g.ui.toast('A ligação caiu.');g.persist();
   }
   dispose(){this.game.worldManager.setInterference(1);}
 }

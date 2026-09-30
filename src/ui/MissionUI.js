@@ -1,4 +1,4 @@
-import { archiveRecords, buildingAreas } from '../narrative/MissionData.js';
+import { archiveRecords, archiveFolders, buildingAreas } from '../narrative/MissionData.js';
 
 // Legible, diegetic document/telephone interfaces, separated from menus/settings.
 export class MissionUI {
@@ -9,39 +9,45 @@ export class MissionUI {
     ui.panel.classList.remove('hidden');
   }
   document(body) { return `<div class="document">${body}</div>`; }
-  records() { return `<table><thead><tr><th>Caixa</th><th>Volumes</th><th>Lacre</th></tr></thead><tbody>${Object.entries(archiveRecords).map(([code,count])=>`<tr><td>${code}</td><td>${count}</td><td>0417</td></tr>`).join('')}</tbody></table>`; }
   memo() {
     this.game.world.story.memoRead=true;this.game.persist();
-    this.show('CIRCULAR 17',this.document('<b>IMPRESSÃO DO TURNO NOTURNO</b><p>Folhas de conferência ficam retidas até autorização do Arquivo.</p><p>Disque o ramal <b>417</b> no telefone do Protocolo. Aguarde a liberação e retire a folha na impressora.</p><p>O cartão B permanece no gaveteiro. Não remova os lacres; conte os volumes pela etiqueta.</p><p>Responsável: Marta · Administração</p>'));
+    this.show('AVISOS DO TURNO',this.document('<b>ACESSOS COMPARTILHADOS</b><p>O cartão do Arquivo B voltou ao quadro de chaves do Protocolo. Pode usar; devolva ao sair.</p><p>Inventários: organizados por mês. Notas de manutenção têm uma seção separada.</p><hr><p>O café é de hoje. A caneca com asa torta é do Antônio.</p><p>Sexta-feira: tragam um prato para o almoço. Não outra salada de passas.</p>'));
   }
   phone(message='') {
-    this.show('RAMAL INTERNO',`<p role="status">${message||'Liberação de documentos · consulte a circular no quadro de avisos.'}</p><label>RAMAL<input data-extension inputmode="numeric" maxlength="3" autocomplete="off" aria-label="RAMAL"></label><button data-action="dial">DISCAR</button>`,'phone');
+    this.show('RAMAL INTERNO',`<p role="status">${message||'Agenda interna: Administração 417 · Protocolo 203 · Manutenção 119.'}</p><label>RAMAL<input data-extension inputmode="numeric" maxlength="3" autocomplete="off" aria-label="RAMAL"></label><button data-action="dial">DISCAR</button>`,'phone');
   }
   printer() {
     const s=this.game.world.story;
     if(s.entityHeard){this.entity();return;}
-    this.show('IMPRESSORA / FILA',this.document(`<b>ORDEM 0417</b><p>${s.orderPrinted?'Folha já retirada. O cartão B está no gaveteiro.':s.printerAuthorized?'Autorização recebida. Uma folha aguardando retirada.':'TRABALHO RETIDO · autorização por ramal necessária.'}</p>`)+(s.printerAuthorized&&!s.orderPrinted?'<button data-action="print-order">IMPRIMIR E RETIRAR FOLHA</button>':''));
+    this.show('IMPRESSORA / FILA',this.document('<b>CÓPIAS DO ANTÔNIO</b><p>Relatórios do mês. A impressão já está na bandeja. Nenhum documento seu está pendente.</p><p>A máquina faz um ruído baixo de ventilação.</p>'));
   }
   drawer() {
-    const g=this.game,card=g.world.inventory.includes('archive-card');
-    this.show('GAVETA / ACESSOS',this.document(`<b>CARTÃO B · ARQUIVO</b><p>${card?'Cartão em sua prancheta.':g.world.story.orderPrinted?'A folha autoriza a retirada do cartão B.':'Retire primeiro a folha de conferência na impressora.'}</p><p>Demais chaves: recolhidas pela manutenção.</p>`)+(!card&&g.world.story.orderPrinted?'<button data-action="take-card">RETIRAR CARTÃO B</button>':''));
+    this.show('GAVETEIRO',this.document('<b>OBJETOS DO PROTOCOLO</b><p>Clipes, borrachas secas e uma revista velha. Um bilhete: “Cartão B no quadro. Não guardar aqui outra vez.”</p>'));
+  }
+  keys() {
+    const card=this.game.world.inventory.includes('archive-card');
+    this.show('QUADRO DE CHAVES',this.document(`<b>ARQUIVO B</b><p>${card?'O gancho B está vazio. Você está com o cartão.':'Um único cartão no gancho B. Etiqueta: acesso compartilhado · Arquivo B.'}</p><p>Demais chaves: manutenção.</p>`)+(!card?'<button data-action="take-card">PEGAR CARTÃO B</button>':''));
   }
   order() {
     const g=this.game,w=g.world,s=w.story;
-    const steps=[['Ler circular no quadro de avisos',s.memoRead],['Liberar a fila pelo ramal',s.printerAuthorized],['Retirar a folha impressa',s.orderPrinted],['Retirar cartão B no gaveteiro',w.inventory.includes('archive-card')||s.routineSubmitted],['Liberar o Arquivo B',s.archiveUnlocked],['Conferir volumes e lacres',g.task.inspected===3],['Entregar inventário no terminal',s.routineSubmitted]];
-    let body=steps.map(([text,done])=>`<p>${done?'[x]':'[ ]'} ${text}</p>`).join('');
-    if(s.orderPrinted)body+=this.records();
-    body+='<p>Prateleira 03 · não abra os lacres. TAB consulta esta folha.</p>';
-    if(s.entityHeard)body+='<hr><b>ANOTAÇÃO SEM REMETENTE</b><p>Compare o relógio do Arquivo com o Protocolo. Reveja Marta. Observe antes de registrar uma ocorrência.</p><p>O que falou pela máquina pode não estar dizendo a verdade.</p>';
-    this.show('ORDEM 0417',this.document(body),'order');
+    let body='<b>23:20 · ARQUIVO B</b><p>Buscar o inventário mensal de setembro e entregar para Marta.</p>';
+    if(s.routineSubmitted)body='<b>INVENTÁRIO ENTREGUE</b><p>Marta recebeu a pasta. Intervalo liberado.</p>';
+    const folder=archiveFolders.find(item=>item.code===s.folderCode);
+    if(folder)body+=`<hr><p>Na prancheta: ${folder.code} · ${folder.title} · ${folder.month}.</p>`;
+    if(s.entityHeard)body+='<hr><p>Uma folha apareceu sem remetente. “Não confie em tudo que reconhece.”</p>';
+    this.show('ANOTAÇÃO DO TURNO',this.document(body),'order');
   }
   box(code) {
     this.ui.boxCode=code;
-    const count=archiveRecords[code], checked=this.game.world.flags.inspectedBoxes.includes(code);
-    this.show(code,this.document(`<b>ETIQUETA DA REMESSA</b><p>DOCUMENTOS ADMINISTRATIVOS<br>VOLUMES: ${count}<br>LACRE: 0417 · intacto</p><p>Compare com a folha impressa antes de rubricar.</p>`)+`<label>VOLUMES NA FOLHA<select data-count aria-label="VOLUMES NA FOLHA"><option value="">Selecionar</option>${[8,12,15].map(n=>`<option>${n}</option>`).join('')}</select></label><button data-action="confirm-box" data-code="${code}">${checked?'CONFERÊNCIA REGISTRADA — FECHAR':'RUBRICAR CONFERÊNCIA'}</button>`,'box');
+    this.show(code,this.document(`<b>REMESSA ANTIGA · LACRADA</b><p>VOLUMES: ${archiveRecords[code]} · LACRE: 0417</p><p>As caixas guardam documentos avulsos. Inventários mensais ficam nas pastas, na seção do mês.</p>`),'box');
+  }
+  folder(code) {
+    const folder=archiveFolders.find(item=>item.code===code);if(!folder)return;
+    const s=this.game.world.story;
+    this.show(`PASTA ${code}`,this.document(`<b>${folder.title.toUpperCase()}</b><p>${folder.month}</p><p>${folder.detail}</p>`)+(!s.routineSubmitted?`<button data-action="take-folder" data-code="${code}">${s.folderCode===code?'DEVOLVER À PRATELEIRA':s.folderCode?'TROCAR A PASTA NA PRANCHETA':'LEVAR PASTA'}</button>`:''));
   }
   entity() {
-    this.show('SEM REMETENTE',this.document('<b>ESTA FOLHA NÃO TEM NÚMERO DE PROTOCOLO</b><p>Há duas versões do mesmo lugar. Uma delas não se lembra de você.</p><p>Compare com a primeira passagem. Nem toda diferença é um erro. Nem toda ajuda é ajuda.</p><p>Não registre o que você apenas supõe.</p>'));
+    this.show('SEM REMETENTE',this.document('<b>VOCÊ CONSEGUE ME OUVIR?</b><p>Não confie em tudo que reconhece.</p><p>Nenhum nome. Nenhum número de protocolo.</p>'));
   }
   clock(clock) {
     const minutes=this.game.world.gameTime+clock.offset();
@@ -50,22 +56,22 @@ export class MissionUI {
   }
   terminal() {
     const g=this.game,w=g.world,s=w.story;
-    let body=this.document(`<b>ARQUIVO B · ORDEM 0417</b><p>${g.task.inspected}/3 caixas rubricadas.</p><p>${w.currentTask==='complete'?'Conferência e ocorrência encerradas.':s.entityHeard?'Verificação complementar pendente.':'Conferência de fim de turno: volumes, lacres e devolução de acesso.'}</p>`);
-    if(g.task.canSubmitRoutine)body+='<button data-action="submit-routine">ENTREGAR INVENTÁRIO E DEVOLVER CARTÃO</button>';
-    else if(g.task.canReport)body+='<button data-action="conforme">NENHUMA ALTERAÇÃO OBSERVADA</button><button data-action="irregularity">REGISTRAR OCORRÊNCIA</button>';
+    let body=this.document(`<b>PORTARIA / LIVRO DE OCORRÊNCIAS</b><p>${s.entityHeard?'Registro disponível para alterações observadas.':'Plantão sem ocorrências. Inventários devem ser entregues pessoalmente à Administração.'}</p>`);
+    if(g.task.canReport)body+='<button data-action="conforme">NENHUMA ALTERAÇÃO OBSERVADA</button><button data-action="irregularity">REGISTRAR OCORRÊNCIA</button>';
     else if(w.currentTask==='complete')body+=this.document('<b>REGISTRO RECEBIDO</b><p>O turno segue aberto. A próxima etapa da noite ainda não está disponível.</p>');
-    else body+='<button data-action="work-order">CONSULTAR FOLHA DE TRABALHO</button>';
+    else body+='<p>Consulte a intranet ou converse com os funcionários.</p>';
     body+='<details><summary>MAPA DE ACESSOS</summary>'+buildingAreas.map(([name,state])=>`<p>${name}: ${name==='Arquivo B'?(s.archiveUnlocked?'Liberado':'Bloqueado · cartão B necessário'):state}</p>`).join('')+'</details>';
     this.show('PROTOCOLO / PENDÊNCIAS',body,'terminal');
   }
   handle(action,button) {
     const g=this.game;
-    if(action==='dial'){g.audio.interact();const ok=g.task.authorizePrinter(this.ui.panel.querySelector('[data-extension]').value);g.persist();this.phone(ok?'ARQUIVO: Ordem 0417 liberada. A folha sai na impressora.':'Ramal sem atendimento. Consulte a circular.');}
-    else if(action==='print-order'){if(g.task.printOrder()){g.audio.printer(g.worldManager.printer.position);g.persist();this.order();}}
-    else if(action==='take-card'){if(g.task.takeCard()){g.audio.interact();g.persist();this.drawer();}}
-    else if(action==='submit-routine')g.submitRoutine();
+    if(action==='dial'){g.audio.interact();const ramal=this.ui.panel.querySelector('[data-extension]').value;this.phone(ramal==='417'?'MARTA: Pode vir pessoalmente. Estou na minha mesa, no fim do corredor.':ramal==='203'?'Você ouve seu próprio telefone, aqui no Protocolo.':ramal==='119'?'MANUTENÇÃO: Encerramos às 22h. Emergências, só pela portaria.':'Ramal sem atendimento. Consulte a agenda.');}
+    else if(action==='take-card'){if(g.task.takeCard()){g.worldManager.cardBadge.visible=false;g.audio.interact();g.persist();g.closePanel();}}
+    else if(action==='take-folder'){
+      if(g.world.story.folderCode===button.dataset.code){g.world.story.folderCode=null;g.world.inventory=g.world.inventory.filter(item=>item!=='archive-folder');g.worldManager.refreshFolders();g.persist();g.closePanel();}
+      else if(g.task.takeFolder(button.dataset.code)){g.audio.paper();g.worldManager.refreshFolders();g.persist();g.closePanel();}
+    }
     else if(action==='work-order')this.order();
-    else if(action==='confirm-box')g.confirmBox(button.dataset.code,this.ui.panel.querySelector('[data-count]').value);
     else return false;
     return true;
   }

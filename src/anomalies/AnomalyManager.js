@@ -27,7 +27,7 @@ export class AnomalyManager {
   revealEyes(distance) {
     const w=this.world;
     if(!w.story.entityHeard || !w.story.anomaliesReleased)return false;
-    if(w.anomalyStates.purple_eyes||!w.flags.purpleEyesEligible||!w.flags.martaSeenNormal||w.flags.inspectedBoxes.length!==3||distance<8)return false;
+    if(w.anomalyStates.purple_eyes||!w.flags.purpleEyesEligible||!w.flags.martaSeenNormal||!w.story.routineSubmitted||distance<8||w.story.releaseDelay<30)return false;
     w.anomalyStates.purple_eyes=true;
     return true;
   }

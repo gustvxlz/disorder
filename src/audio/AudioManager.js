@@ -22,6 +22,7 @@ export class AudioManager {
     make('ring',2,(t)=>((t%.65)<.42?1:0)*(Math.sin(t*2*Math.PI*440)+Math.sin(t*2*Math.PI*480))*.11*Math.min(1,t*25));
     make('printer',1.4,(t,n,s)=>(s*.17+Math.sin(t*1200)*.028)*(Math.sin(t*25)>.1?1:.15));
     make('interference',1.8,(t,n,s)=>(Math.sin(t*2*Math.PI*(100+t*22))*.08+n*.025)*Math.sin(Math.PI*t/1.8));
+    make('water',.85,(t,n,s)=>(s*.45+Math.sin(t*(720+Math.sin(t*31)*140))*.04)*Math.sin(Math.PI*t/.85));
   }
   applySettings(){this.listener?.setMasterVolume(this.settings.value.volume);this.ambient?.setVolume(.42*this.settings.value.sfx);}
   unlock() {
@@ -50,6 +51,7 @@ export class AudioManager {
   door(position,locked=false){this.play(locked?'click':'door',position,locked?.4:.75,this.random.range(.94,1.04));}
   interact(){this.play('click',null,.35);}
   paper(){this.play('paper',null,.75);}
+  water(position){this.play('water',position,.55);}
   phone(position){this.stopRing();this.ring=this.play('ring',position,.9);}
   release(sound){sound.disconnect();sound.gain.disconnect();sound.panner?.disconnect();sound.removeFromParent();this.sources.delete(sound);}
   stopRing(){if(this.ring?.isPlaying){this.ring.stop();this.release(this.ring);}this.ring=null;}

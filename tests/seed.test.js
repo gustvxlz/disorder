@@ -26,7 +26,7 @@ test('different seed can remove anomaly', () => {
   assert.equal(world.anomalyStates.clock_offset, false);
 });
 
-test('inspection requires all boxes and report stays internal', () => {
+test('post-contact report stays internal and does not start another mission', () => {
   const world = createWorldState(12346);
   aftermath(world,new AnomalyManager(world, true));
   const task = new TaskManager(world);
