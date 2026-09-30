@@ -1,0 +1,90 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { AssetLibrary } from '../src/world/AssetLibrary.js';
+import { WorldManager } from '../src/world/WorldManager.js';
+import { PlayerController } from '../src/player/PlayerController.js';
+import { InteractionSystem } from '../src/player/InteractionSystem.js';
+import { createWorldState } from '../src/core/WorldState.js';
+
+// Real GLB, geometry, raycasts and movement; no renderer/audio/browser is simulated as verified.
+test('actual office kit supports the complete walking route and interaction targets', async () => {
+  const canvas = {};
+  globalThis.document = {
+    pointerLockElement: canvas, addEventListener() {}, removeEventListener() {},
+    createElement: () => ({ getContext: () => ({ fillRect() {}, strokeRect() {}, fillText() {} }) }),
+  };
+  globalThis.window = { addEventListener() {}, removeEventListener() {} };
+  const bytes = await readFile(new URL('../public/assets/models/office-kit.glb', import.meta.url));
+  // Node has no image decoder. Stub only texture decoding; keep real geometry/skin parsing.
+  const loader=new GLTFLoader().register(()=>({name:'NODE_TEXTURE_STUB',loadTexture:()=>Promise.resolve(new THREE.Texture())}));
+  const gltf = await loader.parseAsync(bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength), '');
+  const assets = new AssetLibrary();
+  assets.templates = new Map(gltf.scene.children.map(root => [root.name, root]));
+  assets.characters=new Map();
+  for(const path of ['important/marta','important/supervisor','generic/office_01','generic/office_02']) {
+    const data=await readFile(new URL(`../public/assets/models/characters/${path}.glb`,import.meta.url));
+    const asset=await new GLTFLoader().parseAsync(data.buffer.slice(data.byteOffset,data.byteOffset+data.byteLength),'');
+    assets.characters.set(path.split('/')[1],asset);
+  }
+  assets.floorMaterial = assets.carpetMaterial = new THREE.MeshStandardMaterial();
+  const manifest=JSON.parse(await readFile(new URL('../public/assets/models/manifest.json',import.meta.url)));
+  assert.equal(assets.templates.size,Object.keys(manifest).length);
+  for(const name of ['extinguisher','key_board','noticeboard','archive_cart'])assert.ok(assets.templates.has(name),name);
+  assert.ok(assets.clone('marta').getObjectByName('MartaHead'));
+  const camera = new THREE.PerspectiveCamera(68, 1, .08, 65);
+  const player = new PlayerController(camera, canvas, [], { value: { headBob: false } }, () => {});
+  player.enabled = true;
+  const interaction = new InteractionSystem(camera);
+  const audio = { door() {} };
+  const game = { world: createWorldState(12346), audio };
+  const scene = new THREE.Scene();
+  const world = new WorldManager(scene, player, interaction, game, {}, { clockOffset: 11 }, audio, assets);
+  const walk = (x, z) => {
+    player.clearInput(); player.keys.add('KeyW');
+    for (let i = 0; i < 2000; i++) {
+      const dx = x - player.position.x, dz = z - player.position.z;
+      if (Math.hypot(dx, dz) < .07) { player.clearInput(); return; }
+      player.yaw = Math.atan2(-dx, -dz);
+      player.update(1 / 60);
+    }
+    assert.fail(`Route blocked toward ${x}, ${z} at ${player.position.x}, ${player.position.z}`);
+  };
+  const aim = (x, y, z, expected) => {
+    camera.lookAt(x, y, z);
+    assert.match(interaction.update(), expected);
+  };
+  walk(-.91, 6.2); aim(-.91, .88, 7.46, /Atender/);
+  walk(-1.65, 6.2); aim(-1.65, 1.06, 7.72, /terminal/);
+  walk(0, 4.2);
+  player.yaw = 0; player.keys.add('KeyW'); player.keys.add('ShiftLeft');
+  for (let i = 0; i < 100; i++) player.update(.05);
+  assert.ok(player.position.z >= 3.325, 'closed door blocks sprint');
+  player.clearInput(); walk(0, 4.2);
+  world.doors[0].interact();
+  for (let i = 0; i < 80; i++) world.doors[0].update(1 / 60);
+  walk(0, 1); walk(0, -11); walk(1, -12.4);
+  aim(2.6, 1.3, -12.4, /Marta/);
+  walk(-3.7, -12.5);
+  world.doors[1].interact();
+  for (let i = 0; i < 80; i++) world.doors[1].update(1 / 60);
+  walk(-6.2, -12.5); walk(-8.9, -14.5); walk(-8.9, -15.5);
+  for (const [x, code] of [[-9.37, 'A-14'], [-8.9, 'A-15'], [-8.43, 'A-16']]) {
+    walk(x, -15.5); aim(x, 1.36, -16.8, new RegExp(code));
+  }
+  walk(-8.9, -14.5); walk(-6.2, -12.5); walk(-3.7, -12.5);
+  walk(0, -11); walk(0, 1); walk(0, 4.2); walk(-1.65, 6.2);
+  aim(-1.65, 1.06, 7.72, /terminal/);
+  assert.equal(player.collides(-1.4, 7.7), true, 'desk blocks player');
+  assert.equal(player.collides(2.6, -12.4), true, 'Marta blocks player');
+  let meshes = 0, triangles = 0;
+  scene.traverse(object => {
+    if (!object.isMesh) return;
+    meshes++;
+    triangles += (object.geometry.index?.count ?? object.geometry.attributes.position.count) / 3;
+  });
+  console.log(`Scene inventory (not rendered FPS/draw calls): ${meshes} meshes, ${triangles} triangles`);
+  world.dispose(); player.destroy();
+});
