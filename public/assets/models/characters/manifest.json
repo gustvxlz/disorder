@@ -1,0 +1,173 @@
+[
+  {
+    "id": "supervisor",
+    "category": "important",
+    "reference": "boss.png",
+    "triangles": 5388,
+    "bones": 16,
+    "animations": [
+      "idle",
+      "walk",
+      "talk",
+      "look",
+      "sit",
+      "stand",
+      "typing",
+      "work_at_desk",
+      "carry_folder",
+      "inspect_document"
+    ]
+  },
+  {
+    "id": "marta",
+    "category": "important",
+    "reference": "colega_feminina.png",
+    "triangles": 6172,
+    "bones": 16,
+    "animations": [
+      "idle",
+      "walk",
+      "talk",
+      "look",
+      "sit",
+      "stand",
+      "typing",
+      "work_at_desk",
+      "carry_folder",
+      "inspect_document"
+    ]
+  },
+  {
+    "id": "protagonist",
+    "category": "important",
+    "reference": "main_character.png",
+    "triangles": 2756,
+    "bones": 15,
+    "animations": [
+      "idle",
+      "walk",
+      "talk",
+      "look",
+      "sit",
+      "stand",
+      "typing",
+      "work_at_desk",
+      "carry_folder",
+      "inspect_document"
+    ]
+  },
+  {
+    "id": "antonio",
+    "category": "important",
+    "reference": "zelador.png",
+    "triangles": 3856,
+    "bones": 15,
+    "animations": [
+      "idle",
+      "walk",
+      "talk",
+      "look",
+      "sit",
+      "stand",
+      "typing",
+      "work_at_desk",
+      "carry_folder",
+      "inspect_document"
+    ]
+  },
+  {
+    "id": "office_01",
+    "category": "generic",
+    "reference": "npc (1).png",
+    "triangles": 6128,
+    "bones": 16,
+    "animations": [
+      "idle",
+      "walk",
+      "talk",
+      "look",
+      "sit",
+      "stand",
+      "typing",
+      "work_at_desk",
+      "carry_folder",
+      "inspect_document"
+    ]
+  },
+  {
+    "id": "office_02",
+    "category": "generic",
+    "reference": "npc (2).png",
+    "triangles": 5352,
+    "bones": 16,
+    "animations": [
+      "idle",
+      "walk",
+      "talk",
+      "look",
+      "sit",
+      "stand",
+      "typing",
+      "work_at_desk",
+      "carry_folder",
+      "inspect_document"
+    ]
+  },
+  {
+    "id": "office_03",
+    "category": "generic",
+    "reference": "npc (3).png",
+    "triangles": 4388,
+    "bones": 15,
+    "animations": [
+      "idle",
+      "walk",
+      "talk",
+      "look",
+      "sit",
+      "stand",
+      "typing",
+      "work_at_desk",
+      "carry_folder",
+      "inspect_document"
+    ]
+  },
+  {
+    "id": "office_04",
+    "category": "generic",
+    "reference": "npc (4).png",
+    "triangles": 3912,
+    "bones": 15,
+    "animations": [
+      "idle",
+      "walk",
+      "talk",
+      "look",
+      "sit",
+      "stand",
+      "typing",
+      "work_at_desk",
+      "carry_folder",
+      "inspect_document"
+    ]
+  },
+  {
+    "id": "office_05",
+    "category": "generic",
+    "reference": "npc (5).png",
+    "triangles": 3764,
+    "bones": 15,
+    "animations": [
+      "idle",
+      "walk",
+      "talk",
+      "look",
+      "sit",
+      "stand",
+      "typing",
+      "work_at_desk",
+      "carry_folder",
+      "inspect_document"
+    ]
+  }
+]

@@ -17,3 +17,5 @@ pnpm-debug.log*
 *.swo
 *~
 .cache/
+*.blend1
+*.blend2
