@@ -1,4 +1,5 @@
 import { SeededRandom } from './SeededRandom.js';
+import { createStoryState } from '../narrative/MissionData.js';
 
 export function createWorldState(seed) {
   const normalized = Number(seed) >>> 0;
@@ -15,6 +16,7 @@ export function createWorldState(seed) {
     playerChoices: [],
     runDirection: 0,
     npcStates: { marta: 'WORK' },
+    story: createStoryState(),
     flags: { inspectedBoxes: [], openingComplete: false, martaSeenNormal: false, purpleEyesEligible: false, visitedArchive: false, returnedProtocol: false, introCallHeard: false, phonePending: false, phoneAnswered: false, phoneRang: false },
     correctReports: 0,
     falseReports: 0,

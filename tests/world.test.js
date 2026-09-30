@@ -58,6 +58,11 @@ test('actual office kit supports the complete walking route and interaction targ
   };
   walk(-.91, 6.2); aim(-.91, .88, 7.46, /Atender/);
   walk(-1.65, 6.2); aim(-1.65, 1.06, 7.72, /terminal/);
+  walk(-1.65,5.8);walk(3.6,5.8);walk(3.6,7.7);aim(4.87,1.7,7.7,/aviso/);
+  walk(3.6,9.25);walk(2.65,9.25);aim(2.65,.7,10.35,/cartão/);
+  walk(3.6,9.25);walk(3.6,5.8);walk(-2.9,5.8);walk(-2.9,8.5);aim(-3.6,1,8.5,/Impressora/);
+  walk(-2.9,5.8);walk(0,4.2);
+  walk(.9,4.2);aim(.9,1.18,3.09,/Interruptor/);walk(0,4.2);
   walk(0, 4.2);
   player.yaw = 0; player.keys.add('KeyW'); player.keys.add('ShiftLeft');
   for (let i = 0; i < 100; i++) player.update(.05);
@@ -69,16 +74,26 @@ test('actual office kit supports the complete walking route and interaction targ
   aim(2.6, 1.3, -12.4, /Marta/);
   walk(-3.7, -12.5);
   world.doors[1].interact();
+  assert.equal(world.doors[1].state,'LOCKED','no card cannot enter archive');
+  game.world.inventory.push('archive-card');
+  world.doors[1].interact();
+  assert.equal(game.world.story.archiveUnlocked,true);
   for (let i = 0; i < 80; i++) world.doors[1].update(1 / 60);
   walk(-6.2, -12.5); walk(-8.9, -14.5); walk(-8.9, -15.5);
   for (const [x, code] of [[-9.37, 'A-14'], [-8.9, 'A-15'], [-8.43, 'A-16']]) {
     walk(x, -15.5); aim(x, 1.36, -16.8, new RegExp(code));
   }
+  walk(-6.4,-15.1);aim(-5.18,2.1,-15.1,/relógio/);walk(-8.9,-15.5);
   walk(-8.9, -14.5); walk(-6.2, -12.5); walk(-3.7, -12.5);
   walk(0, -11); walk(0, 1); walk(0, 4.2); walk(-1.65, 6.2);
   aim(-1.65, 1.06, 7.72, /terminal/);
   assert.equal(player.collides(-1.4, 7.7), true, 'desk blocks player');
   assert.equal(player.collides(2.6, -12.4), true, 'Marta blocks player');
+  game.world.story.lighting.protocol=false;world.applyLighting();
+  assert.ok(world.lights.protocol.every(light=>light.intensity===0));
+  assert.ok(world.emitters.protocol.length>0);
+  world.setInterference(.08);assert.ok(world.lights.protocol.every(light=>light.intensity>0),'entity can override a switched-off circuit');
+  world.setInterference(1);assert.ok(world.lights.protocol.every(light=>light.intensity===0),'manual state restored after interference');
   let meshes = 0, triangles = 0;
   scene.traverse(object => {
     if (!object.isMesh) return;

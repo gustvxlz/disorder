@@ -1,3 +1,4 @@
+import { MissionUI } from './MissionUI.js';
 export class GameUI {
   constructor(root, game) {
     this.root = root;
@@ -15,11 +16,15 @@ export class GameUI {
     this.hud = root.querySelector('.hud');
     this.panel = root.querySelector('.panel');
     this.panelInner = root.querySelector('.panel-inner');
+    this.mission = new MissionUI(this);
     this.dev = root.querySelector('.dev');
     this.dev.querySelector('[data-position]').insertAdjacentHTML('beforeend', '<option value="phone">PHONE</option>');
     for(const [value,label] of [['art-protocol','ART PROTOCOL'],['art-corridor','ART CORRIDOR'],['art-archive','ART ARCHIVE'],['art-npc','ART NPC'],['art-prop','ART PROP']]) {
       const option=document.createElement('option');option.value=value;option.textContent=label;
       this.dev.querySelector('[data-position]').append(option);
+    }
+    for(const name of ['memo','drawer','printer','switch-protocol','switch-corridor','body']) {
+      const option=document.createElement('option');option.value=name;option.textContent=name.toUpperCase();this.dev.querySelector('[data-position]').append(option);
     }
     this.dev.insertAdjacentHTML('beforeend','<button data-action="force-eyes">PREPARAR OLHOS ROXOS</button><button data-action="skip-task">CONFERIR CAIXAS (DEV)</button><button data-action="advance-time">+ 15 MINUTOS</button>');
     this.fade = root.querySelector('.fade');
@@ -34,7 +39,7 @@ export class GameUI {
     this.updateContinue();
   }
   updateContinue() { this.menu.querySelector('[data-action="continue"]').disabled = !this.game.ready || !this.game.save.load(); }
-  showMenu() { this.updateContinue(); this.menu.querySelector('[data-action="resume"]').classList.add('hidden'); this.menu.classList.remove('hidden'); this.hud.classList.add('hidden'); this.panel.classList.add('hidden'); }
+  showMenu() { this.updateContinue(); this.menu.querySelector('[data-action="resume"]').classList.toggle('hidden',!this.game.active); this.menu.classList.remove('hidden'); this.hud.classList.add('hidden'); this.panel.classList.add('hidden'); }
   hideMenu() { this.menu.classList.add('hidden'); this.hud.classList.remove('hidden'); this.fade.classList.remove('clear'); requestAnimationFrame(() => requestAnimationFrame(() => this.fade.classList.add('clear'))); }
   pause() { this.updateContinue(); this.menu.classList.remove('hidden'); this.menu.querySelector('[data-action="resume"]').classList.remove('hidden'); }
   resume() { this.menu.classList.add('hidden'); this.panel.classList.add('hidden'); }
@@ -56,16 +61,7 @@ export class GameUI {
   }
 
   terminal() {
-    this.panelMode = 'terminal';
-    const { world, task, time } = this.game;
-    const inspected = world.flags.inspectedBoxes;
-    let body;
-    if (world.currentTask === 'pending') body = `<p>PENDÊNCIA ATUAL</p><div class="document"><b>ARQUIVO B</b><p>Conferir: A-14 · A-15 · A-16</p><p>LOCAL: SETOR DE ARQUIVO<br>PRATELEIRA 03</p></div><button data-action="order">ABRIR ORDEM 0417</button>`;
-    else if (world.currentTask === 'inspection' && !task.canReport) body = `<p>PENDÊNCIA ATUAL</p><div class="document"><b>ORDEM 0417 · ARQUIVO B</b><p>Conferir caixas A-14, A-15 e A-16.</p><p>LOCAL: SETOR DE ARQUIVO · PRATELEIRA 03</p><p>REGISTRADAS: ${inspected.length}/3${inspected.length ? ` · ${inspected.join(', ')}` : ''}</p></div><p class="muted">TAB: consultar ficha. Retorne após a conferência.</p>`;
-    else if (task.canReport) body = `<div class="document"><b>ARQUIVO B</b><p>CAIXAS: A-14 · A-15 · A-16</p><p>RESULTADO DA INSPEÇÃO</p></div><button data-action="conforme">CONFORME</button><button data-action="irregularity">REGISTRAR IRREGULARIDADE</button>`;
-    else body = `<div class="document"><b>ARQUIVO B</b><p>REGISTRO RECEBIDO.</p></div><p class="muted">PENDÊNCIAS: 0</p>`;
-    this.panelInner.innerHTML = `<p class="eyebrow">PROTOCOLO INTERNO / ${world.shiftId}</p><h2>TURNO NOTURNO</h2><div class="panel-meta"><span>HORÁRIO: ${time.format()}</span><span>SETOR 03</span></div>${body}<button class="secondary" data-action="close">FECHAR TERMINAL</button>`;
-    this.panel.classList.remove('hidden');
+    this.mission.terminal();
   }
 
   locations() {
@@ -81,18 +77,11 @@ export class GameUI {
   }
 
   workOrder() {
-    this.panelMode = 'order';
-    const { world } = this.game;
-    const boxes = `<p>${world.flags.visitedArchive?'[x]':'[ ]'} Ir ao Arquivo B</p>`+['A-14', 'A-15', 'A-16'].map(code => `<p>${world.flags.inspectedBoxes.includes(code) ? '[x]' : '[ ]'} ${code}</p>`).join('')+`<p>${world.flags.returnedProtocol?'[x]':'[ ]'} Retornar ao Protocolo</p>`;
-    this.panelInner.innerHTML = `<p class="eyebrow">PROTOCOLO / FICHA DE TRABALHO</p><h2>ORDEM 0417</h2><div class="document"><b>ARQUIVO B</b><p>SETOR DE ARQUIVO · PRATELEIRA 03</p>${boxes}<p>${world.currentTask === 'complete' ? 'REGISTRO RECEBIDO.' : 'Retorne ao Protocolo após a conferência.'}</p></div><button data-action="close">FECHAR FICHA [TAB]</button>`;
-    this.panel.classList.remove('hidden');
+    this.mission.order();
   }
 
   boxInspection(code) {
-    this.panelMode = 'box';
-    const checked = this.game.world.flags.inspectedBoxes.includes(code);
-    this.panelInner.innerHTML = `<p class="eyebrow">ARQUIVO B / PRATELEIRA 03</p><h2>${code}</h2><div class="document"><b>CAIXA DE ARQUIVO</b><p>CÓDIGO: ${code}</p><p>DOCUMENTOS ADMINISTRATIVOS<br>LACRE PRESENTE · ETIQUETA LEGÍVEL</p></div><button data-action="confirm-box" data-code="${code}">${checked ? 'CONFERÊNCIA REGISTRADA — FECHAR' : 'CONFIRMAR CONFERÊNCIA'}</button><button class="secondary" data-action="close">VOLTAR</button>`;
-    this.panel.classList.remove('hidden');
+    this.mission.box(code);
   }
 
   handleInput(event) {
@@ -106,6 +95,7 @@ export class GameUI {
   handleClick(event) {
     const action = event.target.closest('button')?.dataset.action;
     if (!action) return;
+    if(this.mission.handle(action,event.target.closest('button')))return;
     if (action === 'new') this.game.startNew();
     else if (action === 'resume') this.game.resume();
     else if (action === 'continue') this.game.continue();
@@ -123,12 +113,12 @@ export class GameUI {
     else if (action === 'go') this.game.devTeleport(this.dev.querySelector('[data-position]').value);
     else if (action === 'confirm-box') this.game.confirmBox(event.target.closest('button').dataset.code);
     else if(action==='force-eyes'&&this.game.world){this.game.world.flags.purpleEyesEligible=true;this.game.persist();}
-    else if(action==='skip-task'&&this.game.world){this.game.task.openOrder();for(const code of ['A-14','A-15','A-16'])this.game.task.inspect(code);this.game.persist();}
+    else if(action==='skip-task'&&this.game.world){this.game.ui.toast('A conferência exige folha, cartão e volumes.');}
     else if(action==='advance-time'&&this.game.world){this.game.world.gameTime+=15;this.game.worldManager.refreshClocks();this.game.persist();}
   }
   credits() {
     this.panelMode='settings';
-    this.panelInner.innerHTML='<p class="eyebrow">DISORDER / CRÉDITOS</p><h2>UM TURNO NOTURNO</h2><div class="document"><p>Referências de personagens e músicas: fornecidas pelo autor.</p><p>Modelos: adaptações originais produzidas no Blender.</p><p>Trilha digital e efeitos: composições e síntese procedural originais.</p><p>Texturas: procedurais e linóleo gerado por imagem.</p><p>Three.js · Vite</p></div><button data-action="close-settings">VOLTAR</button>';
+    this.panelInner.innerHTML='<p class="eyebrow">DISORDER / CRÉDITOS</p><h2>UM TURNO NOTURNO</h2><div class="document"><p>Referências de personagens e músicas: fornecidas pelo autor.</p><p>Modelos: adaptações originais produzidas no Blender.</p><p>Trilha digital e efeitos: composições e síntese procedural originais.</p><p>Texturas: originais procedurais.</p><p>Three.js · Vite</p></div><button data-action="close-settings">VOLTAR</button>';
     this.panel.classList.remove('hidden');
   }
 }

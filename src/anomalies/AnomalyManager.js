@@ -4,7 +4,10 @@ import { anomalyRegistry } from './AnomalyRegistry.js';
 export class AnomalyManager {
   constructor(world, fresh = false) {
     this.world = world;
-    if (fresh) this.select();
+    if (fresh) {
+      this.world.anomalyStates = { clock_offset: false, purple_eyes: false };
+      this.world.flags.purpleEyesEligible = false;
+    }
   }
 
   select() {
@@ -23,6 +26,7 @@ export class AnomalyManager {
   get clockOffset() { return this.world.anomalyStates.clock_offset ? 11 : 0; }
   revealEyes(distance) {
     const w=this.world;
+    if(!w.story.entityHeard || !w.story.anomaliesReleased)return false;
     if(w.anomalyStates.purple_eyes||!w.flags.purpleEyesEligible||!w.flags.martaSeenNormal||w.flags.inspectedBoxes.length!==3||distance<8)return false;
     w.anomalyStates.purple_eyes=true;
     return true;

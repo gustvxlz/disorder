@@ -10,7 +10,7 @@ import { OfficeNPC } from '../npc/OfficeNPC.js';
 export class WorldManager {
   constructor(scene,player,interaction,game,time,anomalies,audio,assets) {
     Object.assign(this,{scene,player,interaction,game,time,anomalies,audio,assets});
-    this.colliders=player.colliders;this.doors=[];this.clocks=[];
+    this.colliders=player.colliders;this.doors=[];this.clocks=[];this.lights={protocol:[],corridor:[],archive:[]};this.emitters={protocol:[],corridor:[],archive:[]};this.interference=1;
     this.staticRoot=new THREE.Group();scene.add(this.staticRoot);
     this.labels=new Labels();this.phonePosition=new THREE.Vector3();
     this.detailMaterial=new THREE.MeshStandardMaterial({color:0xa6a18a,roughness:.8});
@@ -34,21 +34,45 @@ export class WorldManager {
   solid(x,z,width,depth) { this.colliders.push({minX:x-width/2,maxX:x+width/2,minZ:z-depth/2,maxZ:z+depth/2}); }
   label(text,x,y,z,w,h,rotation=0,dark=false) {const mesh=this.labels.make(text,x,y,z,w,h,rotation,dark);this.staticRoot.add(mesh);return mesh;}
   detail(x,y,z,w,h,d) {const mesh=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),this.detailMaterial);mesh.position.set(x,y,z);this.staticRoot.add(mesh);return mesh;}
-  door(x,z,rotation=0,locked=false) {
+  door(x,z,rotation=0,locked=false,id=null) {
     const centerX=x+Math.cos(rotation)*.49,centerZ=z-Math.sin(rotation)*.49;
     this.place('door_frame',centerX,0,centerZ,rotation);
-    if (!locked) {
+    if (!locked || id==='archive') {
       const header=this.place('wall',centerX,2.12,centerZ,rotation);
       header.scale.set(.58,.68/2.8,1);
       header.traverse(object=>{if(object.isMesh&&object.material.name==='Institutional')object.visible=false;});
       this.interaction.registerBlocker(header);
     }
-    this.doors.push(new Door({scene:this.scene,assets:this.assets,x,z,rotation,locked,player:this.player,audio:this.audio,interaction:this.interaction}));
+    const s=this.game.world.story;
+    const door=new Door({scene:this.scene,assets:this.assets,x,z,rotation,locked:locked&&!(id==='archive'&&s.archiveUnlocked),player:this.player,audio:this.audio,interaction:this.interaction,
+      access:id==='archive'?()=>{
+        if(!this.game.world.inventory.includes('archive-card')){this.game.ui?.toast('Cartão B no gaveteiro do Protocolo.');return false;}
+        s.archiveUnlocked=true;return true;
+      }:null,onChange:state=>{if(id){s.doors[id]=state;this.game.persist?.();}}});
+    if(id&&s.doors[id]==='OPEN'){door.state='OPEN';door.progress=1;door.apply(1);}
+    this.doors.push(door);
+    if(id==='archive')this.archiveDoor=door;
   }
   light(x,z,intensity,color=0xd4dfca) {
-    this.place('fluorescent',x,2.66,z);
+    const sector=x<-5?'archive':z>3?'protocol':'corridor';
+    const fixture=this.place('fluorescent',x,2.66,z);
+    fixture.traverse(mesh=>{
+      if(!mesh.isMesh||mesh.material.name!=='Light')return;
+      mesh.material=mesh.material.clone();this.emitters[sector].push(mesh.material);
+    });
     const light=new THREE.PointLight(color,intensity,10,2);light.position.set(x,2.5,z);this.scene.add(light);
+    light.userData.baseIntensity=intensity;this.lights[sector].push(light);
   }
+  applyLighting() {
+    for(const sector of Object.keys(this.lights)) {
+      const enabled=this.game.world.story.lighting[sector];
+      const gain=sector==='protocol'&&this.interference!==1?this.interference:enabled?1:0;
+      for(const light of this.lights[sector])light.intensity=light.userData.baseIntensity*gain;
+      for(const material of this.emitters[sector])material.emissiveIntensity=gain;
+    }
+  }
+  toggleLight(sector){const s=this.game.world.story;s.lighting[sector]=!s.lighting[sector];this.audio.interact();this.applyLighting();this.game.persist();this.game.ui.toast(s.lighting[sector]?'LUZ LIGADA':'LUZ DESLIGADA');}
+  setInterference(value){this.interference=value;this.applyLighting();}
   build() {
     this.scene.background=new THREE.Color(0x18211d);
     this.scene.fog=new THREE.Fog(0x28322c,17,44);
@@ -58,14 +82,14 @@ export class WorldManager {
     r.wall(-5,7,8,Math.PI/2);r.wall(5,7,8,-Math.PI/2);r.wall(0,11,10,Math.PI);
     r.wall(-2.79,3,4.42);r.wall(2.79,3,4.42);
     // A real 1.16 m opening, consistently shared by both adjacent rooms.
-    this.door(-.49,3);
+    this.door(-.49,3,0,false,'protocol');
     r.floor(-1.5,1.5,-10,3);
     r.wall(-1.5,-3.5,13,Math.PI/2);r.wall(1.5,-3.5,13,-Math.PI/2);
     r.floor(-5,5,-15,-10);
     r.wall(0,-15,10);r.wall(-3.25,-10,3.5,Math.PI);r.wall(3.25,-10,3.5,Math.PI);
     r.wall(-5,-14.04,1.92,Math.PI/2);r.wall(-5,-10.96,1.92,Math.PI/2);
     r.wall(5,-12.5,5,-Math.PI/2);
-    this.door(-5,-12.01,Math.PI/2);
+    this.door(-5,-12.01,Math.PI/2,true,'archive');
     this.door(4.86,-12.99,-Math.PI/2,true);
     r.floor(-14,-5,-18,-10);
     r.wall(-14,-14,8,Math.PI/2);r.wall(-9.5,-18,9);r.wall(-9.5,-10,9,Math.PI);
@@ -86,7 +110,8 @@ export class WorldManager {
     this.place('fluorescent_off',-7,2.66,-16);
     furnishProtocol(this);furnishCorridor(this);furnishArchive(this);
     this.clocks.push(new AnalogClock(this.scene,this.assets,0,2.06,10.88,Math.PI,()=>0));
-    this.clocks.push(new AnalogClock(this.scene,this.assets,-10.65,2.18,-17.87,0,()=>this.anomalies.clockOffset));
+    this.clocks.push(new AnalogClock(this.scene,this.assets,-5.18,2.1,-15.1,-Math.PI/2,()=>this.anomalies.clockOffset));
+    for(const clock of this.clocks)this.interaction.register(clock.root,{canInteract:()=>!this.game.flow?.busy,getInteractionText:()=>'[E] Ler relógio',interact:()=>this.game.inspectClock(clock)});
     this.marta=new OfficeNPC(this,{id:'marta',model:'marta',name:'Marta',x:2.6,z:-12.4,rotation:-Math.PI/2,role:'important',idle:'inspect_document'});
     this.supervisor=new OfficeNPC(this,{id:'supervisor',model:'supervisor',name:'Colega',x:-.15,z:6.6,rotation:-Math.PI/2,role:'important'});
     this.npcs=[this.marta,this.supervisor,
@@ -94,6 +119,7 @@ export class WorldManager {
       new OfficeNPC(this,{id:'office_02',model:'office_02',x:3.9,z:-11.3,rotation:-Math.PI*.6,idle:'look'}),
     ];
     for(const npc of this.npcs)this.contactShadow(0,0,.62,.46,0,npc.root);
+    this.applyLighting();
     this.scene.updateMatrixWorld(true);
     batchStatic(this.staticRoot,this.scene);
     this.refreshClocks();
@@ -103,6 +129,7 @@ export class WorldManager {
   dispose() {
     this.labels.dispose();this.detailMaterial.dispose();
     for(const npc of this.npcs)npc.dispose();
+    for(const materials of Object.values(this.emitters))for(const material of materials)material.dispose();
     this.scene.traverse(object=>{if(object.userData.ownedGeometry)object.geometry.dispose();});
     for(const clock of this.clocks)for(const pivot of [clock.hour,clock.minute])pivot.traverse(object=>{if(object.isMesh){object.geometry.dispose();object.material.dispose();}});
   }

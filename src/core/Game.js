@@ -16,6 +16,7 @@ import { RetroDisplay } from './RetroDisplay.js';
 import { MusicManager } from '../audio/MusicManager.js';
 import { DialogueManager } from '../narrative/DialogueManager.js';
 import { ShiftFlow } from '../narrative/ShiftFlow.js';
+import { PlayerBody } from '../player/PlayerBody.js';
 
 export class Game {
   constructor(root) {
@@ -37,6 +38,8 @@ export class Game {
     this.clock = new THREE.Clock();
     this.elapsed = 0;
     this.active = false;
+    this.paused = false;
+    this.saveTimer=0;
     this.scene = new THREE.Scene();
     this.camera = new THREE.PerspectiveCamera(68, innerWidth / innerHeight, 0.08, 65);
     this.camera.position.set(0, 1.65, 8.7);
@@ -60,7 +63,7 @@ export class Game {
     document.addEventListener('keydown', (event) => this.keydown(event));
     root.addEventListener('pointerdown',()=>{
       if(!this.ready)return;
-      this.audio.context.resume().catch(()=>{});
+      if(!this.paused)this.audio.resume();
       if(!this.active)this.music.cue('menu',{loop:true,repeat:true});
     });
     this.frame();
@@ -98,7 +101,9 @@ export class Game {
     this.player = new PlayerController(this.camera, this.renderer.domElement, [], this.settings, () => this.pause());
     this.audio.scene = this.scene;
     this.worldManager = new WorldManager(this.scene, this.player, this.interaction, this, this.time, this.anomalies, this.audio, this.assets);
+    this.body=new PlayerBody(this.scene,this.assets,this.player);
     this.active = true;
+    this.paused = false;
     this.player.enabled = true;
     this.ui.resume();
     this.ui.hideMenu();
@@ -108,6 +113,11 @@ export class Game {
     this.music.silence();
     this.flow=new ShiftFlow(this);
     this.flow.start();
+    if(world.flags.openingComplete && world.story.phase!=='manifestation' && world.playerPose) {
+      const [x,z,yaw,pitch]=world.playerPose;
+      if(!this.player.collides(x,z))this.player.position.set(x,0,z);
+      this.player.yaw=yaw;this.player.pitch=pitch;
+    }
     this.persist();
     if (fresh) this.ui.toast(`TURNO ${world.shiftId}`);
   }
@@ -117,22 +127,30 @@ export class Game {
     this.player.destroy();
     this.flow?.dispose();
     this.audio.stopEffects();
+    this.body?.dispose();
     this.worldManager.dispose();
     this.scene.clear();
   }
 
-  persist() { if (this.world && !this.save.save(this.world)) this.ui.toast('Não foi possível salvar neste navegador.'); }
+  persist() {
+    if(!this.world)return;
+    if(this.player&&!this.flow?.busy)this.world.playerPose=[this.player.position.x,this.player.position.z,this.player.yaw,this.player.pitch];
+    if(!this.save.save(this.world))this.ui.toast('Não foi possível salvar neste navegador.');
+  }
 
   pause() {
     if (!this.active || this.ui.panel.classList.contains('hidden') === false) return;
+    this.paused=true;
     this.player.enabled = false;
     this.player.clearInput();
     document.exitPointerLock?.();
+    this.persist();this.audio.pause();
     this.ui.pause();
   }
 
   resume() {
     if (!this.active) return;
+    this.paused=false;this.audio.resume();
     this.ui.resume();
     this.player.enabled = !this.flow?.busy;
     if(this.player.enabled)this.player.lock();
@@ -149,19 +167,21 @@ export class Game {
 
   closePanel() {
     this.ui.panel.classList.add('hidden');
+    this.ui.panelMode=null;
     if (this.world.flags.phonePending && !this.world.flags.phoneRang) {
       this.audio.phone(this.worldManager.phonePosition);
       this.world.flags.phoneRang = true;
       this.persist();
     }
-    this.player.enabled = true;
+    if(this.world.story.phase==='manifestation'&&!this.flow.manifestation){this.flow.beginManifestation();return;}
+    this.player.enabled = !this.paused&&!this.flow.busy;
     this.player.lock();
   }
 
   closeSettings() {
     this.ui.panel.classList.add('hidden');
     if (this.active && this.ui.menu.classList.contains('hidden')) {
-      this.player.enabled = true;
+      this.player.enabled = !this.paused&&!this.flow?.busy;
       this.player.lock();
     }
   }
@@ -175,13 +195,29 @@ export class Game {
     this.ui.boxInspection(code);
   }
 
-  confirmBox(code) {
-    if (this.task.inspect(code)) {
+  confirmBox(code,count) {
+    if (this.task.inspect(code,count)) {
       this.audio.paper();
       this.ui.toast(`${code} · CONFERIDO (${this.task.inspected}/3)`);
       this.persist();
       this.closePanel();
-    }
+    } else this.ui.toast('A folha não corresponde. Confira volumes, autorização e acesso.');
+  }
+
+  openMissionPanel(type) {
+    if(this.flow.busy)return;
+    this.player.enabled=false;this.player.clearInput();document.exitPointerLock?.();
+    this.audio.interact();this.ui.mission[type]();
+  }
+  inspectClock(clock) {
+    this.player.enabled=false;this.player.clearInput();document.exitPointerLock?.();
+    this.audio.interact();this.ui.mission.clock(clock);
+  }
+  submitRoutine() {
+    if(!this.task.submitRoutine())return;
+    this.world.inventory=this.world.inventory.filter(item=>item!=='archive-card');
+    this.world.completedTasks.push('archive_inventory');this.persist();
+    this.closePanel();
   }
 
   report(type, location = null) {
@@ -200,7 +236,7 @@ export class Game {
       this.world.flags.phoneAnswered = true;
       this.ui.toast('...');
       this.persist();
-    } else this.ui.toast('SEM CHAMADAS.');
+    } else this.openMissionPanel('phone');
   }
 
   forceAnomaly(active) {
@@ -221,12 +257,18 @@ export class Game {
       'A-14': [-9.37, -15.5, 0, -.3],
       'A-15': [-8.9, -15.5, 0, -.3],
       'A-16': [-8.43, -15.5, 0, -.3],
-      clock: [-10.65, -16.4, 0, .25],
+      clock: [-6.4, -15.1, -Math.PI/2, .29],
       'art-protocol': [1.8,4.8,2.68,-.14],
       'art-corridor': [.4,1.5,0,-.02],
       'art-archive': [-6.4,-13.5,.9,-.14],
       'art-npc': [2.5,-11.3,-Math.PI/2,-.03],
       'art-prop': [.1,-3,-Math.PI/2,-.58],
+      memo: [3.6,7.7,-Math.PI/2,0],
+      drawer: [2.65,9.25,Math.PI,-.55],
+      printer: [-2.3,8.5,Math.PI/2,-.4],
+      'switch-protocol': [.9,4.2,0,-.46],
+      'switch-corridor': [.3,1,-Math.PI/2,-.45],
+      body: [0,5,0,-1.35],
     };
     const [x, z, yaw, pitch] = positions[name] || positions.protocol;
     this.player.position.set(x, 0, z);
@@ -239,7 +281,7 @@ export class Game {
 
   keydown(event) {
     if (/INPUT|SELECT|TEXTAREA/.test(event.target?.tagName) && event.code !== 'Escape') return;
-    if(event.code==='KeyE'&&!event.repeat&&this.dialogue.active&&this.ui.menu.classList.contains('hidden')) {this.dialogue.advance();return;}
+    if(event.code==='KeyE'&&!event.repeat&&this.dialogue.active&&!this.paused&&this.ui.panel.classList.contains('hidden')) {this.dialogue.advance();return;}
     if (event.code === 'Escape' && this.ui.panelMode === 'settings' && !this.ui.panel.classList.contains('hidden')) {
       this.closeSettings();
       return;
@@ -271,10 +313,9 @@ export class Game {
     requestAnimationFrame(() => this.frame());
     const realDelta = this.clock.getDelta();
     const dt = Math.min(realDelta, 0.05);
-    this.elapsed += dt;
-    this.music.update(dt);
+    if(!this.paused){this.elapsed += dt;this.music.update(dt);}
     if (this.active) {
-      const playing=this.ui.menu.classList.contains('hidden');
+      const playing=!this.paused&&this.ui.menu.classList.contains('hidden');
       if(playing){this.dialogue.update(dt);this.flow.update(dt);}
       if (this.player.enabled) {
         this.player.update(dt);
@@ -284,8 +325,11 @@ export class Game {
         this.ui.clock(this.time.format());
         this.worldManager.refreshClocks();
       }
-      if(playing)this.worldManager.update(dt, this.elapsed);
-      this.audio.update(this.player, dt);
+      if(playing){
+        this.worldManager.update(dt, this.elapsed);this.body.update(dt,!!this.flow.manifestation);
+        this.audio.update(this.player, dt);
+        this.saveTimer+=dt;if(this.saveTimer>10&&!this.flow.busy){this.saveTimer=0;this.persist();}
+      }
       this.performance.update(realDelta, this.world, this.player);
     }
     this.renderer.render(this.scene, this.camera);

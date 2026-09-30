@@ -1,4 +1,5 @@
 const required = ['A-14', 'A-15', 'A-16'];
+import { archiveRecords, printerExtension } from './MissionData.js';
 
 export class TaskManager {
   constructor(world) { this.world = world; }
@@ -7,14 +8,35 @@ export class TaskManager {
     if (this.world.currentTask === 'pending') this.world.currentTask = 'inspection';
   }
 
-  inspect(code) {
+  authorizePrinter(extension) {
+    if(String(extension).trim()!==printerExtension)return false;
+    this.world.story.printerAuthorized=true;return true;
+  }
+  printOrder() {
+    if(!this.world.story.printerAuthorized)return false;
+    this.world.story.orderPrinted=true;return true;
+  }
+  takeCard() {
+    if(!this.world.story.orderPrinted)return false;
+    if(!this.world.inventory.includes('archive-card'))this.world.inventory.push('archive-card');
+    return true;
+  }
+  submitRoutine() {
+    const s=this.world.story;
+    if(!this.canSubmitRoutine)return false;
+    s.routineSubmitted=true;s.phase='manifestation';return true;
+  }
+  get canSubmitRoutine() { return this.world.currentTask==='inspection' && this.inspected===3 && this.world.story.orderPrinted && !this.world.story.routineSubmitted; }
+  inspect(code, count) {
     if (this.world.currentTask !== 'inspection' || !required.includes(code)) return false;
+    if(!this.world.story.orderPrinted || !this.world.story.archiveUnlocked || Number(count)!==archiveRecords[code])return false;
+    this.world.story.boxCounts[code]=Number(count);
     if (!this.world.flags.inspectedBoxes.includes(code)) this.world.flags.inspectedBoxes.push(code);
     return true;
   }
 
   get inspected() { return this.world.flags.inspectedBoxes.length; }
-  get canReport() { return this.world.currentTask === 'inspection' && this.inspected === required.length; }
+  get canReport() { return this.world.currentTask === 'inspection' && this.inspected === required.length && this.world.story.entityHeard && this.world.story.anomaliesReleased; }
 
   report(type, location = null) {
     if (!this.canReport || !['conforme', 'irregularity'].includes(type)) return false;

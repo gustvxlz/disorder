@@ -21,6 +21,7 @@ export class AudioManager {
     make('paper',.32,(t,n)=>n*.075*Math.sin(Math.PI*t/.32));
     make('ring',2,(t)=>((t%.65)<.42?1:0)*(Math.sin(t*2*Math.PI*440)+Math.sin(t*2*Math.PI*480))*.11*Math.min(1,t*25));
     make('printer',1.4,(t,n,s)=>(s*.17+Math.sin(t*1200)*.028)*(Math.sin(t*25)>.1?1:.15));
+    make('interference',1.8,(t,n,s)=>(Math.sin(t*2*Math.PI*(100+t*22))*.08+n*.025)*Math.sin(Math.PI*t/1.8));
   }
   applySettings(){this.listener?.setMasterVolume(this.settings.value.volume);this.ambient?.setVolume(.42*this.settings.value.sfx);}
   unlock() {
@@ -53,6 +54,9 @@ export class AudioManager {
   release(sound){sound.disconnect();sound.gain.disconnect();sound.panner?.disconnect();sound.removeFromParent();this.sources.delete(sound);}
   stopRing(){if(this.ring?.isPlaying){this.ring.stop();this.release(this.ring);}this.ring=null;}
   printer(position){this.play('printer',position,.75);}
+  interference(){this.play('interference',null,.6);}
+  pause(){this.paused=true;this.context.suspend().catch(()=>{});}
+  resume(){this.paused=false;this.context.resume().catch(()=>{});}
   voice(name,position,onEnded){return this.play(name,position,1,1,onEnded);}
   dialogueTone(profile,position) {
     const name=`dialogue-${profile.wave}`;

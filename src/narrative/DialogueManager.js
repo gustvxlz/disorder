@@ -1,4 +1,4 @@
-const profiles={marta:{pitch:330,wave:'triangle'},supervisor:{pitch:190,wave:'pulse'},generic:{pitch:245,wave:'square'}};
+const profiles={marta:{pitch:330,wave:'triangle'},supervisor:{pitch:190,wave:'pulse'},generic:{pitch:245,wave:'square'},entity:{pitch:110,wave:'triangle'}};
 
 export class DialogueManager {
   constructor(element,audio) { this.element=element;this.audio=audio;this.active=false; }

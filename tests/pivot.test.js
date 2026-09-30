@@ -25,6 +25,8 @@ test('purple eyes cannot precede normal observation or appear beside the player'
   world.flags.purpleEyesEligible=true;world.flags.inspectedBoxes=['A-14','A-15','A-16'];
   assert.equal(anomalies.revealEyes(20),false);
   world.flags.martaSeenNormal=true;
+  assert.equal(anomalies.revealEyes(20),false,'cannot reveal before entity');
+  world.story.entityHeard=true;world.story.anomaliesReleased=true;
   assert.equal(anomalies.revealEyes(2),false);
   assert.equal(anomalies.revealEyes(20),true);
   assert.equal(anomalies.revealEyes(20),false);
@@ -37,7 +39,7 @@ test('all nine GLBs contain skinning and ten animation clips',async()=>{
     const gltf=JSON.parse(bytes.subarray(20,20+bytes.readUInt32LE(12)));
     assert.equal(gltf.skins.length,1,entry.id);
     assert.equal(gltf.skins[0].joints.length,entry.bones,entry.id);
-    if(['marta','supervisor','office_01','office_02'].includes(entry.id)) {
+    if(['protagonist','marta','supervisor','office_01','office_02'].includes(entry.id)) {
       assert.equal(entry.bones,16,entry.id);
       assert.ok(gltf.nodes.some(node=>node.name==='neck'),entry.id);
     }

@@ -35,6 +35,10 @@ button:disabled { opacity: .35; cursor: not-allowed; }
 .panel-meta { display: flex; justify-content: space-between; gap: 20px; padding: 12px 0; border-top: 1px solid #627569; border-bottom: 1px solid #627569; font-size: 12px; letter-spacing: .12em; }
 .document { padding: 20px; margin: 22px 0; background: #e2dfd0; border-left: 4px solid #60776b; line-height: 1.7; letter-spacing: .09em; }
 .document p { margin: 8px 0; }
+.document table { width:100%; border-collapse:collapse; font-size:14px; }
+.document th, .document td { padding:8px; border-bottom:1px solid #9ba694; text-align:left; }
+.panel input[data-extension] { display:block; width:100%; max-width:180px; margin-top:10px; padding:10px; color:#26362e; background:#e2dfd0; border:1px solid #60776b; }
+.panel details { margin:18px 0; font-size:12px; line-height:1.7; }
 .panel button { color: #dfe8db; }
 .panel button.secondary { margin-top: 24px; background: transparent; color: #334b3d; }
 .panel label { display: block; margin: 16px 0; font-size: 12px; letter-spacing: .1em; }

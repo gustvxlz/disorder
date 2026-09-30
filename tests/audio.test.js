@@ -10,7 +10,7 @@ test('procedural effects contain finite, non-silent samples without clipping', (
     return { duration: length / sampleRate, getChannelData: () => data };
   } };
   audio.synthesize();
-  assert.equal(Object.keys(audio.buffers).length, 7);
+  assert.equal(Object.keys(audio.buffers).length, 8);
   for (const [name, buffer] of Object.entries(audio.buffers)) {
     let peak = 0;
     for (const value of buffer.getChannelData(0)) {

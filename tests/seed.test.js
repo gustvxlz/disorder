@@ -4,6 +4,7 @@ import { SeededRandom } from '../src/core/SeededRandom.js';
 import { createWorldState } from '../src/core/WorldState.js';
 import { AnomalyManager } from '../src/anomalies/AnomalyManager.js';
 import { TaskManager } from '../src/narrative/TaskManager.js';
+import { completeInventory, aftermath } from './helpers/mission.js';
 
 test('same seed repeats random sequence and anomaly', () => {
   const first = new SeededRandom(12346);
@@ -11,8 +12,9 @@ test('same seed repeats random sequence and anomaly', () => {
   assert.deepEqual([first.random(), first.int(1, 10), first.chance(0.5)], [second.random(), second.int(1, 10), second.chance(0.5)]);
   const a = createWorldState(12346);
   const b = createWorldState(12346);
-  new AnomalyManager(a, true);
-  new AnomalyManager(b, true);
+  const am=new AnomalyManager(a, true),bm=new AnomalyManager(b, true);
+  assert.equal(a.anomalyStates.clock_offset,false);
+  aftermath(a,am);aftermath(b,bm);
   assert.equal(a.shiftId, b.shiftId);
   assert.equal(a.anomalyStates.clock_offset, true);
   assert.equal(b.anomalyStates.clock_offset, true);
@@ -20,16 +22,15 @@ test('same seed repeats random sequence and anomaly', () => {
 
 test('different seed can remove anomaly', () => {
   const world = createWorldState(12345);
-  new AnomalyManager(world, true);
+  aftermath(world,new AnomalyManager(world, true));
   assert.equal(world.anomalyStates.clock_offset, false);
 });
 
 test('inspection requires all boxes and report stays internal', () => {
   const world = createWorldState(12346);
-  new AnomalyManager(world, true);
+  aftermath(world,new AnomalyManager(world, true));
   const task = new TaskManager(world);
-  task.openOrder();
-  for (const code of ['A-14', 'A-15', 'A-16']) task.inspect(code);
+  completeInventory(world,task);
   assert.equal(task.canReport, true);
   assert.equal(task.report('irregularity', 'clock'), true);
   assert.equal(world.correctReports, 1);
@@ -43,10 +44,9 @@ test('incorrect reports trigger the internal consequence once', () => {
     [12345, 'irregularity', 'clock', 'falseReports'],
   ]) {
     const world = createWorldState(seed);
-    new AnomalyManager(world, true);
+    aftermath(world,new AnomalyManager(world, true));
     const task = new TaskManager(world);
-    task.openOrder();
-    for (const code of ['A-14', 'A-15', 'A-16']) task.inspect(code);
+    completeInventory(world,task);
     assert.equal(task.report(type, location), true);
     assert.equal(world[counter], 1);
     assert.equal(world.flags.phonePending, true);

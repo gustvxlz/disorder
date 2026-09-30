@@ -5,17 +5,17 @@ import { SettingsManager } from '../src/core/SettingsManager.js';
 import { createWorldState } from '../src/core/WorldState.js';
 import { TaskManager } from '../src/narrative/TaskManager.js';
 import { AnomalyManager } from '../src/anomalies/AnomalyManager.js';
+import { completeInventory, aftermath } from './helpers/mission.js';
 
 test('both seeds finish, save and restore without losing report or inspection', () => {
   const data = new Map();
   globalThis.localStorage = { getItem: key => data.get(key), setItem: (key, value) => data.set(key, value) };
   for (const seed of [12345, 12346]) {
     const world = createWorldState(seed);
-    new AnomalyManager(world, true);
+    aftermath(world,new AnomalyManager(world, true));
     const task = new TaskManager(world);
     assert.equal(task.inspect('A-14'), false);
-    task.openOrder();
-    for (const code of ['A-14', 'A-14', 'A-15', 'A-16']) task.inspect(code);
+    completeInventory(world,task);task.inspect('A-14',12);
     assert.equal(task.inspected, 3);
     assert.equal(task.report('invalid'), false);
     assert.equal(task.report(seed === 12346 ? 'irregularity' : 'conforme', 'clock'), true);

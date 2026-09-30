@@ -8,7 +8,8 @@ export function distanceToSegment(x,z,x1,z1,x2,z2) {
 }
 
 export class Door {
-  constructor({scene,assets,x,z,rotation=0,locked=false,player,audio,interaction}) {
+  constructor({scene,assets,x,z,rotation=0,locked=false,player,audio,interaction,access=null,onChange=()=>{}}) {
+    this.access=access;this.onChange=onChange;
     this.state=locked?DoorState.LOCKED:DoorState.CLOSED;
     this.player=player; this.audio=audio; this.progress=0;
     this.rotation=rotation;
@@ -23,11 +24,15 @@ export class Door {
     this.apply(0);
   }
   canInteract() { return true; }
-  getInteractionText() { return this.state===DoorState.LOCKED?'[E] Acesso restrito':`[E] ${this.state===DoorState.OPEN||this.state===DoorState.OPENING?'Fechar':'Abrir'}`; }
+  getInteractionText() { return this.state===DoorState.LOCKED?(this.access?'[E] Usar cartão B':'[E] Acesso restrito'):`[E] ${this.state===DoorState.OPEN||this.state===DoorState.OPENING?'Fechar':'Abrir'}`; }
   interact() {
-    if(this.state===DoorState.LOCKED) { this.audio.door(this.mesh.position,true); return; }
+    if(this.state===DoorState.LOCKED) {
+      if(!this.access?.()){this.audio.door(this.mesh.position,true);return;}
+      this.state=DoorState.CLOSED;
+    }
     this.state=this.state===DoorState.OPEN||this.state===DoorState.OPENING?DoorState.CLOSING:DoorState.OPENING;
     this.audio.door(this.mesh.position);
+    this.onChange(this.state===DoorState.OPENING?'OPEN':'CLOSED');
   }
   apply(progress) {
     const eased=progress*progress*(3-2*progress);
