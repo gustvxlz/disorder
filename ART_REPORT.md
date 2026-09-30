@@ -40,18 +40,18 @@
 
 ## 20–27. Verificação e publicação
 
-20. Vistas estáveis locais observadas próximas de 165 FPS / 6,1 ms nesta máquina. Transições/compilação inicial não são benchmark. Não foi testado um computador modesto; metas 60/30 FPS não são garantidas para todo hardware.
+20. Vistas estáveis locais: 159–165 FPS; revisão pública: aproximadamente 165 FPS / 6,1 ms nesta máquina. Transições/compilação inicial não são benchmark. Não foi testado um computador modesto; metas 60/30 FPS não são garantidas para todo hardware.
 21. Nas capturas finais locais: 12–38 draw calls. Durante outros enquadramentos da revisão houve até 77; variar enquadramento e NPCs visíveis altera o número. Material compartilhado reduz calls de props; não há LOD complexo.
 22. Capturas locais renderizadas: 181.436–194.708 tris. Inventário automatizado final: 221.716 tris, 96 objetos mesh (não é contagem visível nem draw calls).
 23. Build estático: 10.053.729 bytes / 34 arquivos (~10,05 MB decimal). Inclui cinco GLBs antigos preparados, não carregados pelo runtime. Nenhum .blend/reference/source é copiado para dist.
 24. `npm run build`: passou, sem warnings de Vite. `npm test`: 21/21, incluindo rota, colisões, interação, save, seed, áudio, dimensões WebP, escala humana e movimento real de clips. Blender exportou e salvou os fontes; avisos de acesso a preferências/miniaturas de usuário não impediram geração, testes ou carregamento.
-25. Commits: pendentes de registro final.
-26. GitHub Actions: pendente de publicação/verificação.
-27. URL pública a verificar após deploy: https://gustvxlz.github.io/disorder/. Build local de produção revisada em http://127.0.0.1:4173/, separada da sessão de jogo do autor. Workflow de deploy não modificado.
+25. Commits publicados em main: `9fde3b1` (slice funcional anterior e arte integrada), `c7e222f` (fontes Blender/pipeline), `d125bbe` (testes/documentação/capturas). O checkpoint funcional anterior estava sem commit; foi preservado e versionado junto à integração, não refeito nesta rodada. A conferência pública é registrada em um commit documental adicional.
+26. GitHub Actions: build e deploy concluídos com sucesso no [run 36743044214](https://github.com/gustvxlz/disorder/actions/runs/36743044214). O run anterior foi substituído/cancelado pela publicação mais recente, não falhou no build.
+27. URL pública testada: https://gustvxlz.github.io/disorder/?dev=true. GLBs, atlas, texturas, materiais e abertura animada carregaram; diálogo avançou por E e colega saiu do Protocolo. Conferidos Protocolo, corredor, Arquivo B, Marta, NPC genérico e extintor. Canvas real 640×480; console sem warnings/erros. `node source-assets/art-review/verify_public.mjs`: 30/30 arquivos públicos HTTP 200, binários idênticos à build e manifestos JSON equivalentes (Git normaliza finais de linha). Quatro marcadores vazios `.gitkeep` do dist não são assets de runtime nem são servidos pelo Pages. Os três arquivos de música carregam e os efeitos procedurais têm testes; audição subjetiva não é afirmada. Build local revisada em http://127.0.0.1:4173/, separada da sessão do autor. Workflow de deploy não modificado.
 
 ## 28–30. Limitações e próxima rodada
 
-28. Não se afirma playthrough humano contínuo completo nesta rodada: mecânicas foram aprovadas pelo autor, regressão de percurso usa física/raycast reais; inspeção de arte usa posições DEV. Áudio foi preservado e carregamento será conferido; qualidade percebida requer audição humana. Fontes animadas têm pesos predominantemente rígidos por segmento; podem apresentar vincos fortes em poses extremas. Sem facial/lip sync, campanha ou finais novos.
+28. Não se afirma playthrough humano contínuo completo nesta rodada: mecânicas foram aprovadas pelo autor, regressão de percurso usa física/raycast reais; inspeção de arte usa posições DEV. Áudio foi preservado e carregamento conferido; qualidade percebida requer audição humana. Fontes animadas têm pesos predominantemente rígidos por segmento; podem apresentar vincos fortes em poses extremas. Sem facial/lip sync, campanha ou finais novos.
 29. Nenhum boneco humano antigo permanece colocado. Templates/atores antigos não usados continuam preservados. Paredes modulares e alguns props secundários mantêm construção simples; não se afirma arte final de todos os assets. Rótulos distantes continuam pouco legíveis a 640×480.
 30. Próximo Art Pass: aprovação do autor sobre proporções/rostos, refinamento de deformação de ombros/saia e UVs próprios de roupa, depois adaptação dos NPCs restantes. Só expandir arte após esta avaliação; não expandir gameplay automaticamente.
 
@@ -68,3 +68,5 @@ Capturas reais da build local de produção, sem retoque da arte. A aprovação 
 - [NPC genérico](source-assets/art-review/screenshots/generic-npc.jpg)
 - [Extintor](source-assets/art-review/screenshots/extinguisher.jpg)
 - [Colega na abertura](source-assets/art-review/screenshots/opening-colleague.jpg)
+- [Protocolo no GitHub Pages](source-assets/art-review/screenshots/public-protocol.jpg)
+- [Marta no GitHub Pages](source-assets/art-review/screenshots/public-marta.jpg)
