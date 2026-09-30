@@ -9,7 +9,7 @@ Original project code.
 Original DISORDER models built with Blender 5.2.2 LTS. Editable source and reproducible generator: `source-assets/blender/office-kit.blend` and `build_kit.py`.
 One GLB library contains 41 reusable models; counts are recorded in `public/assets/models/manifest.json`. The legacy unrigged Marta template is retained in the library but never placed. No downloaded model packs.
 
-AUTHOR-PROVIDED REFERENCE: nine images under `models/image/individual/` and `models/image/group/`, preserved unchanged. ORIGINAL / BLENDER: reference-derived characters, rigs and procedural animation sets. This art pass remodels only Marta (`colega_feminina.png`), the opening colleague (`boss.png`), office_01 (`npc (1).png`) and office_02 (`npc (2).png`). The five remaining previous adaptations are unchanged and not placed.
+AUTHOR-PROVIDED REFERENCE: nine images under `models/image/individual/` and `models/image/group/`, preserved unchanged. ORIGINAL / BLENDER: reference-derived characters, rigs and procedural animation sets. The art pass remodeled Marta (`colega_feminina.png`), the opening colleague (`boss.png`), office_01 (`npc (1).png`) and office_02 (`npc (2).png`). The story pass updates the protagonist (`main_character.png`): dark suit, light shirt, burgundy tie and deliberately blank reference-derived face; full 16-bone body and reusable clips. Four remaining adaptations are not placed.
 
 ## Textures
 
@@ -19,7 +19,7 @@ Administrative labels are original text drawn to small canvas textures at runtim
 
 ## Audio
 
-ORIGINAL / PROCEDURAL: building ambience, footsteps, door, terminal/button click, paper, telephone ring and printer, now quantized for a lo-fi digital identity. Dialogue uses brief pulse, triangle or square syllables; no complete spoken voice recording is played.
+ORIGINAL / PROCEDURAL: building ambience, footsteps, door, terminal/button click, paper, telephone ring, printer and entity interference, quantized for a lo-fi digital identity. Dialogue uses brief pulse, triangle or square syllables; the telepathic presence uses lower non-positional tones plus subtitles, not a complete spoken voice recording.
 
 ORIGINAL / PROCEDURAL music: `menu.wav`, `good.wav`, `bad.wav`, each 26.4 seconds, generated from original note sequences in `source-assets/audio/build_music.py`. Pulse/triangle synthesis, three voices, waltz meter; bad-direction variation adds dissonance and modulation. These are NOT reinterpretations of the author's MP3s. No downloaded recordings or CC0 samples were used; no CC0 claim is made.
 

@@ -29,11 +29,11 @@ During dialogue, E reveals the current line, then advances. Click the menu to en
 
 ## Slice validation
 
-Run `npm test` for automated checks. Add `?dev=true` for metrics and seeded restarts: **5** is normal, **8** has the clock offset, **1** can alter Marta's eyes. For the eye event, observe Marta with E before checking all three boxes; the change only occurs later, away from her.
+Run `npm test` for automated checks. Every new shift begins normal. Read the internal notice, authorize printing through the phone, collect the order/card, compare box counts, and submit the inventory. The printer manifestation then introduces the second observation pass. Add `?dev=true` for metrics and seeded restarts: after that scene, **5** stays normal, **8** can change the clock, **1** can alter Marta's eyes. Eyes still require normal observation and distance; changes never start beside the player.
 
 The scene renders at 640×480, with a centered 4:3 pixelated upscale and HTML UI. Four NPCs are active; nine reference-based character assets have been prepared. Original reference/music folders remain untouched.
 
-The art slice preserves the tested gameplay: four active characters remodeled in Blender, painted-pixel textures and a shared prop atlas. See `ART_REPORT.md` for captures, measurements and publication status. `PIVOT_REPORT.md` is the historical checkpoint before this art pass. The full campaign and a verified 5–10 minute duration are not claimed.
+The current story slice keeps the art pass, adds the protagonist body, a printer/card puzzle, functional light circuits, the first telepathic manifestation and coherent pause/save. RESUME returns to the active paused scene; CONTINUE loads persistent progress. Old saves retain their previous progress and skip the new introduction: use NEW SHIFT to play the new mission. See `STORY_REPORT.md` for current verification and limitations. `ART_REPORT.md` and `PIVOT_REPORT.md` are historical checkpoints. The full campaign and a verified duration are not claimed.
 
 ## Preview
 
